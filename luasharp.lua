@@ -47,10 +47,6 @@ function dump_type_info(type, show_what, object)
   if object == nil then log("--- info for type ---") end
   log("Type:", type)
 
-  if BindingFlags == nil then
-    BindingFlags = load_type('System.Reflection.BindingFlags')
-  end
-
   local binding_flags = make_binding_flags(show_what)
   log("BindingFlags:", binding_flags)
 

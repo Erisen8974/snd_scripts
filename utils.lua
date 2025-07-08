@@ -454,16 +454,16 @@ function log_debug_list(...)
 end
 
 function logify(...)
-    local message = ""
     local params = table.pack(...)
-    for i = 1, params.n do
+    local message = tostring(default(params[1], ""))
+    for i = 2, params.n do
         message = message .. ' ' .. tostring(params[i])
     end
     return message
 end
 
 function log(...)
-    yield('/echo ' .. logify(...))
+    Svc.Chat:Print(logify(...))
 end
 
 function log_count(list, c)
