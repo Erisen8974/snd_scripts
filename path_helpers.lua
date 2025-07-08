@@ -142,6 +142,7 @@ function RouteToObject(object_name, distance)
     PathStop()
 end
 
+---@return EntityWrapper
 function get_closest_entity(name, critical)
     critical = default(critical, false)
     if EntityWrapper == nil then

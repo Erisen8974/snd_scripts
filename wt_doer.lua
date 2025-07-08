@@ -1,4 +1,5 @@
 require 'utils'
+require 'path_helpers'
 require 'inventory_buddy'
 
 
@@ -17,11 +18,12 @@ function do_wt(gearset)
     end
     while wt_count() < 9 do
         if not wt_duty() then
-            log_debug("No Possible Duties", default(CallerName(false), FunctionInfo(true)),
+            log("No Possible Duties", default(CallerName(false), FunctionInfo(true)),
                 "Failed to find a duty to fill out wt bingo", wt_count(), 'of 9 done')
             return false
         end
     end
+    log("WT Bingo completed", wt_count(), "of 9 done")
     return true
 end
 
@@ -58,7 +60,7 @@ function get_wt()
     end
 
     repeat
-        local entity = get_closest_entity("Khloe Aliapoh")
+        local entity = get_closest_entity("Khloe Aliapoh", true)
         entity:SetAsTarget()
         entity:Interact()
         wait(.1)
@@ -164,7 +166,7 @@ end
 function get_duty_row(duty_id)
     local duty = Excel.GetRow("InstanceContent", duty_id)
     if duty == nil then
-        StopScript("InvalidDuty", CallerName(false), "no duty with ID", duty_id)
+        return StopScript("InvalidDuty", CallerName(false), "no duty with ID", duty_id)
     end
     return duty.ContentFinderCondition
 end
@@ -172,15 +174,18 @@ end
 function get_content_row(content_id)
     local duty = Excel.GetRow("TerritoryType", content_id)
     if duty == nil then
-        StopScript("InvalidDuty", CallerName(false), "no duty with territory ID", content_id)
+        return StopScript("InvalidDuty", CallerName(false), "no duty with territory ID", content_id)
     end
     return duty.ContentFinderCondition
 end
 
 function wt_pick_high_level_duty(level)
     if level == 50 then
+        --return get_content_row(350)  --Haukke Manor Hard, not stable, runs into walls in candle hall
     elseif level == 70 then
-        return get_content_row(742)  --Hell's Lid
+        return get_content_row(742) --Hell's Lid
+    elseif level == 90 then
+        --return get_content_row(973)  --The Dead Ends, not stable, first boss has mechanic requiring 2 players
     elseif level == 100 then
         return get_content_row(1266) --The Underkeep
     end

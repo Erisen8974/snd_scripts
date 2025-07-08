@@ -71,7 +71,8 @@ function open_addon(addon, base_addon, ...)
     while not IsAddonReady(addon) do
         CheckTimeout(1, ti, CallerName(false), "Opening addon", addon)
         if not IsAddonReady(base_addon) then
-            StopScript("open_addon failed", CallerName(false), "Failed opening", addon, "base addon missing or not ready",
+            StopScript("open_addon failed", CallerName(false), "Failed opening", addon,
+                "base addon missing or not ready",
                 base_addon)
         end
         SafeCallback(base_addon, ...)
@@ -166,8 +167,8 @@ function open_retainer_bell()
 end
 
 function is_busy()
-    return GetCharacterCondition(6) or GetCharacterCondition(26) or GetCharacterCondition(27) or
-        GetCharacterCondition(45) or GetCharacterCondition(51) or
+    return Player.IsBusy or GetCharacterCondition(6) or GetCharacterCondition(26) or GetCharacterCondition(27) or
+        GetCharacterCondition(45) or GetCharacterCondition(51) or GetCharacterCondition(32) or
         not (GetCharacterCondition(1) or GetCharacterCondition(4)) or
         (not IPC.vnavmesh.IsReady()) or IPC.vnavmesh.PathfindInProgress() or IPC.vnavmesh.IsRunning()
 end

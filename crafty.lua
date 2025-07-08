@@ -12,7 +12,6 @@ function CouldCraft()
     return GetCharacterCondition(41) or not GetCharacterCondition(5)
 end
 
-
 function DoCraft(item_info, amt)
     local ti = ResetTimeout()
     local id = default(item_info.itemId, 0)
@@ -26,7 +25,7 @@ function DoCraft(item_info, amt)
     until CouldCraft()
     ArtisanCraftItem(item_info.recipeId, amt)
     repeat
-        CheckTimeout(60*amt, ti, "DoCraft", item_info.itemName, amt, "did not finish")
+        CheckTimeout(60 * amt, ti, "DoCraft", item_info.itemName, amt, "did not finish")
         wait(1)
     until not ArtisanGetEnduranceStatus()
     if id ~= 0 then
@@ -47,7 +46,7 @@ function SessionCrafting(buff_item, ...)
     local failures = {}
     repeat
         local craft_attempted = false
-        for i=1,crafts.n do
+        for i = 1, crafts.n do
             -- Auto Retainer has integration hidden in /ays expert for this
             --if ARRetainersWaitingToBeProcessed() then
             --    close_addon("RecipieNote")
@@ -62,11 +61,11 @@ function SessionCrafting(buff_item, ...)
                     failures[item] = 0 --reset sequential fail count cause it worked
                 else
                     close_addon("RecipieNote")
-                    log("Craft", item.itemName, "failed", count+1, "times")
-                    failures[item] = count+1
+                    log("Craft", item.itemName, "failed", count + 1, "times")
+                    failures[item] = count + 1
                 end
             elseif count == 5 then
-                failures[item] = count+1 -- set it to 6 to not report again
+                failures[item] = count + 1 -- set it to 6 to not report again
                 log("Craft failed 5 times", item.itemName, "no more attempts will be made.")
             end
         end
