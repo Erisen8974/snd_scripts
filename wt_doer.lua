@@ -186,6 +186,8 @@ function wt_pick_high_level_duty(level)
         return get_content_row(742) --Hell's Lid
     elseif level == 90 then
         --return get_content_row(973)  --The Dead Ends, not stable, first boss has mechanic requiring 2 players
+        --return get_content_row(976)  --Smileton, no bossmod support
+        return get_content_row(1070) --The Fell Court of Troia, no bossmod support
     elseif level == 100 then
         return get_content_row(1266) --The Underkeep
     end
@@ -219,12 +221,18 @@ function raid_id_to_duty(raid_id)
         -- alliance raids by expantion. Not supported
         return nil
     end
-    if raid_id == 9 then
+    if raid_id == 7 then
+        -- Alexander: The Creator
+        return get_content_row(580) -- Eyes of the Creator
+    elseif raid_id == 9 then
         -- Sigmascape
         return get_content_row(748) -- Phantom Train
     elseif raid_id == 10 then
         -- Alphascape
         return get_content_row(798) -- Chaos!
+    elseif raid_id == 23 then
+        -- E1-4
+        return nil
     elseif raid_id == 31 then
         -- P1-4
         return nil
@@ -233,6 +241,9 @@ function raid_id_to_duty(raid_id)
         return nil
     elseif raid_id == 34 then
         -- M1-2
+        return nil
+    elseif raid_id == 35 then
+        -- M3-4
         return nil
     end
     StopScript("NotImplemented", nil, "Raid", raid_id, "is not implemented")
