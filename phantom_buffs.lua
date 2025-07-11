@@ -1,4 +1,5 @@
 require 'utils'
+require 'legacy_interface'
 
 -------------------------------
 ------- Phantom Jobbies -------

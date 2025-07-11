@@ -100,3 +100,21 @@ function GetNodeText(name, ...)
     end
     return n.Text
 end
+
+function HasStatusId(status_id)
+    for s in luanet.each(Player.Status) do
+        if s.StatusId == status_id then
+            return true
+        end
+    end
+    return false
+end
+
+function GetStatusStackCount(status_id)
+    for s in luanet.each(Player.Status) do
+        if s.StatusId == status_id then
+            return s.Param
+        end
+    end
+    return 0
+end
