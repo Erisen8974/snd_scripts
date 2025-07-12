@@ -2,11 +2,13 @@ require 'utils'
 require 'luasharp'
 import "System.Numerics"
 
-function TownPath(town, x, y, z, shard)
+function TownPath(town, x, y, z, shard, dest_town, ...)
+    local alt_zones = { town, dest_town, ... }
+    dest_town = default(dest_town, town)
     wait_ready(10, 1)
     local current_town = luminia_row_checked("TerritoryType", Svc.ClientState.TerritoryType).PlaceName.Name
-    if current_town == town then
-        log_debug("Already in", town)
+    if list_contains(alt_zones, current_town) then
+        log_debug("Already in", current_town)
     else
         log_debug("Moving to", town, "from", current_town)
         repeat
@@ -19,7 +21,7 @@ function TownPath(town, x, y, z, shard)
     if shard ~= nil then
         local nearest_shard = closest_aethershard()
         local shard_name = luminia_row_checked("Aetheryte", nearest_shard.DataId).AethernetName.Name
-        if path_distance_to(Vector3(x, y, z)) < path_distance_to(nearest_shard.Position) then
+        if current_town == dest_town and path_distance_to(Vector3(x, y, z)) < path_distance_to(nearest_shard.Position) then
             log_debug("Already nearer to", x, y, z, "than to aethernet", shard_name)
         elseif shard_name == shard then
             log_debug("Nearest shard is already", shard_name)
@@ -172,6 +174,7 @@ function raw_closest_thing(filter, distance_function)
     if EntityWrapper == nil then
         EntityWrapper = load_type('SomethingNeedDoing.LuaMacro.Wrappers.EntityWrapper')
     end
+    distance_function = default(distance_function, direct_distance)
     local closest = nil
     local distance = nil
     for i = 0, Svc.Objects.Length - 1 do

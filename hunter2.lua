@@ -1,12 +1,13 @@
 require 'utils'
 require 'path_helpers'
+require 'shop_helpers'
 
 
 function GetHunts()
     if Inventory.GetInventoryItem(get_item_info("Elite Mark Bill").itemId) == nil then
         -- ARR
         if Player.GrandCompany == 1 then
-            TownPath("Limsa Lominsa Lower Decks", 95, 40, 61, "The Aftcastle")
+            TownPath("Limsa Lominsa Lower Decks", 95, 40, 61, "The Aftcastle", "Limsa Lominsa Upper Decks")
         elseif Player.GrandCompany == 2 then
             TownPath("New Gridania", -75, 0, 0)
         elseif Player.GrandCompany == 3 then
@@ -67,4 +68,21 @@ function GrabHunt(boardName, stringIndex, huntIndex)
         confirm_addon(string.format("Mobhunt%d", huntIndex), true, 0)
     end
     wait_ready(10, 2)
+end
+
+function HasAnyLog()
+    for _, log in pairs({
+        "Elite Mark Bill",
+        "Elite Clan Mark Bill",
+        "Elite Veteran Clan Mark Bill",
+        "Elite Clan Nutsy Mark Bill",
+        "Elite Guildship Mark Bill",
+        "Elite Dawn Hunt Bill"
+    }) do
+        local item = Inventory.GetInventoryItem(get_item_info(log).itemId)
+        if item ~= nil and item.Count >= 1 then
+            return true
+        end
+    end
+    return false
 end
