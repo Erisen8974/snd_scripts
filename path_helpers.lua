@@ -1,6 +1,7 @@
 require 'utils'
 require 'luasharp'
 import "System.Numerics"
+import "System"
 
 function TownPath(town, x, y, z, shard, dest_town, ...)
     local alt_zones = { town, dest_town, ... }
@@ -41,9 +42,9 @@ function custom_path(fly, waypoints)
     for i, waypoint in ipairs(waypoints) do
         if type(waypoint) == "table" then
             local x, y, z = table.unpack(waypoint)
-            vec_waypoints[#vec_waypoints+1] = Vector3(x,y,z)
+            vec_waypoints[#vec_waypoints + 1] = Vector3(x, y, z)
         elseif type(waypoint) == "userdata" then -- it better be a vector3
-            vec_waypoints[#vec_waypoints+1] = waypoint
+            vec_waypoints[#vec_waypoints + 1] = waypoint
         else
             StopScript("Invalid waypoint type", CallerName(false), "Type:", type(waypoint))
         end
@@ -51,18 +52,26 @@ function custom_path(fly, waypoints)
     IPC.vnavmesh.MoveTo(make_list(Vector3, table.unpack(vec_waypoints)), fly)
 end
 
-function WalkTo(x, y, z, range)
-    local pos
+function xyz_to_vec3(x, y, z)
     if y ~= nil and z ~= nil then
-        pos = Vector3(x, y, z)
+        return Vector3(x, y, z)
     elseif y ~= nil or z ~= nil then
         StopScript("Invalid coordinates for WalkTo", CallerName(false), "Must provide either vec3 or x,y,z", "x:", x,
             "y:", y, "z:", z)
     else
-        pos = x
+        return x
     end
-    local ti = ResetTimeout()
-    IPC.vnavmesh.PathfindAndMoveTo(pos, false)
+end
+
+function WalkTo(x, y, z, range)
+    local pos = xyz_to_vec3(x, y, z)
+    local p
+    if range ~= nil then
+        p = pathfind_with_tolerance(pos, false, range)
+    else
+        p = await(IPC.vnavmesh.Pathfind(Entity.Player.Position, pos, false))
+    end
+    IPC.vnavmesh.MoveTo(p, false)
     while (IPC.vnavmesh.IsRunning() or IPC.vnavmesh.PathfindInProgress()) do
         CheckTimeout(30, ti, "ZoneTransition", "Waiting for pathfind")
         if range ~= nil and Vector3.Distance(Entity.Player.Position, pos) <= range then
@@ -70,6 +79,13 @@ function WalkTo(x, y, z, range)
         end
         wait(0.1)
     end
+end
+
+function pathfind_with_tolerance(vec3, fly, tolerance)
+    local resultType = Type.GetType(
+        'System.Threading.Tasks.Task`1[System.Collections.Generic.List`1[System.Numerics.Vector3]]')
+    return await(invoke_ipc('vnavmesh.Nav.PathfindWithTolerance', resultType,
+        { nil, nil, luanet.ctype(Boolean), luanet.ctype(Single) }, Entity.Player.Position, vec3, fly, tolerance))
 end
 
 function ZoneTransition()
@@ -207,10 +223,13 @@ end
 
 function path_distance_to(vec3, fly)
     fly = default(fly, false)
-    path = IPC.vnavmesh.Pathfind(Entity.Player.Position, vec3, fly)
+    path = await(IPC.vnavmesh.Pathfind(Entity.Player.Position, vec3, fly))
+    if path.Count == 0 then -- if theres no path use the cartesian distance
+        return Vector3.Distance(Entity.Player.Position, vec3)
+    end
     dist = 0
     prev_point = Entity.Player.Position
-    for point in luanet.each(await(path)) do
+    for point in luanet.each(path) do
         dist = dist + Vector3.Distance(prev_point, point)
         prev_point = point
     end
