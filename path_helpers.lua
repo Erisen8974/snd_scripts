@@ -65,15 +65,19 @@ end
 
 function WalkTo(x, y, z, range)
     local pos = xyz_to_vec3(x, y, z)
+    local ti = ResetTimeout()
     local p
     if range ~= nil then
         p = pathfind_with_tolerance(pos, false, range)
     else
         p = await(IPC.vnavmesh.Pathfind(Entity.Player.Position, pos, false))
     end
+    if p.Count == 0 then
+        StopScript("No path found", CallerName(false), "x:", x, "y:", y, "z:", z, "range:", range)
+    end
     IPC.vnavmesh.MoveTo(p, false)
     while (IPC.vnavmesh.IsRunning() or IPC.vnavmesh.PathfindInProgress()) do
-        CheckTimeout(30, ti, "ZoneTransition", "Waiting for pathfind")
+        CheckTimeout(30, ti, CallerName(false), "Waiting for pathfind")
         if range ~= nil and Vector3.Distance(Entity.Player.Position, pos) <= range then
             IPC.vnavmesh.Stop()
         end

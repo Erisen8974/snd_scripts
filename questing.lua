@@ -50,7 +50,7 @@ function AcceptQuest(who, which, qlist)
     qlist = default(qlist, "SelectIconString")
     which = default(which, 0)
 
-    ti = ResetTimeout()
+    local ti = ResetTimeout()
     repeat
         local entity = get_closest_entity(who)
         entity:SetAsTarget()

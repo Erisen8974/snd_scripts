@@ -355,25 +355,6 @@ function SafeCallback(addon, update, ...)
     resume_pyes()
 end
 
-function run_snd_script(what, timeout)
-    if IsMacroRunningOrQueued(what) then
-        StopScript("Subscript is already running!", CallerName(false), what)
-    end
-    if timeout ~= nil then
-        ti = ResetTimeout()
-    end
-    log("Subscript starting:", what)
-    yield("/snd run " .. what)
-    wait(.1)
-    repeat
-        if timeout ~= nil then
-            CheckTimeout(timeout, ti, CallerName(false), "Subscript timed out", what)
-        end
-        wait(.1)
-    until not IsMacroRunningOrQueued(what)
-    log("Subscript finished:", what)
-end
-
 function bool_to_string(state, true_string, false_string)
     true_string = default(true_string, "true")
     false_string = default(false_string, "false")
