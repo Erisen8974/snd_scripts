@@ -454,11 +454,11 @@ function log_debug_list(...)
     end
 end
 
-function logify(...)
-    local params = table.pack(...)
-    local message = tostring(default(params[1], ""))
-    for i = 2, params.n do
-        message = message .. ' ' .. tostring(params[i])
+function logify(first, ...)
+    local rest = table.pack(...)
+    local message = tostring(first)
+    for i = 1, rest.n do
+        message = message .. ' ' .. tostring(rest[i])
     end
     return message
 end
@@ -537,20 +537,4 @@ function AlertTimeout(max_duration, wait_info, caller_name, ...)
         return true
     end
     return false
-end
-
-function mysplit(inputstr)
-    for str in string.gmatch(inputstr, "[^%.]+") do
-        return str
-    end
-end
-
-function load_type(type_path)
-    local assembly = mysplit(type_path)
-    log_debug("Loading assembly", assembly)
-    luanet.load_assembly(assembly)
-    log_debug("Wrapping type", type_path)
-    local type_var = luanet.import_type(type_path)
-    log_debug("Wrapped type", type_var)
-    return type_var
 end

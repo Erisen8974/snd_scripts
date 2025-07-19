@@ -1,4 +1,5 @@
 require 'utils'
+import "System.Linq"
 
 
 function await(o, max_wait)
@@ -9,6 +10,27 @@ function await(o, max_wait)
     wait(0.1)
   end
   return o.Result
+end
+
+function make_list(type, ...)
+  local a = luanet.make_array(type, {...})
+  return Enumerable.ToList(a)
+end
+
+function assembly_name(inputstr)
+    for str in string.gmatch(inputstr, "[^%.]+") do
+        return str
+    end
+end
+
+function load_type(type_path)
+    local assembly = assembly_name(type_path)
+    log_debug("Loading assembly", assembly)
+    luanet.load_assembly(assembly)
+    log_debug("Wrapping type", type_path)
+    local type_var = luanet.import_type(type_path)
+    log_debug("Wrapped type", type_var)
+    return type_var
 end
 
 function get_method(type, method_name, binding)

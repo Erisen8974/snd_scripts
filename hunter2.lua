@@ -1,6 +1,7 @@
 require 'utils'
 require 'path_helpers'
 require 'shop_helpers'
+require 'inventory_buddy'
 
 
 function GetHunts()

@@ -5,7 +5,10 @@ require 'inventory_buddy'
 
 local duty_blacklist = {}
 function reset_blacklist()
-    duty_blacklist = {}
+    duty_blacklist = {
+        577, -- P1T6 ex, no module support, falls off the platform
+        --720, -- emanation ex, no module support, sometimes works, depends if the vril mech is used too fast
+    }
 end
 
 function do_wt(gearset)
@@ -182,6 +185,7 @@ end
 function wt_pick_high_level_duty(level)
     if level == 50 then
         --return get_content_row(350)  --Haukke Manor Hard, not stable, runs into walls in candle hall
+        return get_content_row(387) --Sastasha Hard
     elseif level == 70 then
         return get_content_row(742) --Hell's Lid
     elseif level == 90 then
@@ -216,12 +220,20 @@ function extract_level(duty)
     return tonumber(name:sub(s, e))
 end
 
+local UNSUPPORTED_RAID_IDS = {
+    26,27,28,29,30, -- Alliance raids by expansion
+    23,24,25, -- Eden
+    31,32,33, -- Pandora
+    34,35, -- AAC Light-heavyweight
+}
+
 function raid_id_to_duty(raid_id)
-    if 26 <= raid_id and raid_id <= 30 then
-        -- alliance raids by expantion. Not supported
+    if list_contains(UNSUPPORTED_RAID_IDS, raid_id) then
         return nil
-    end
-    if raid_id == 7 then
+    elseif raid_id == 6 then
+        -- Alexander: The Son
+        return get_content_row(520) -- Fist of the Son
+    elseif raid_id == 7 then
         -- Alexander: The Creator
         return get_content_row(580) -- Eyes of the Creator
     elseif raid_id == 9 then
@@ -230,21 +242,6 @@ function raid_id_to_duty(raid_id)
     elseif raid_id == 10 then
         -- Alphascape
         return get_content_row(798) -- Chaos!
-    elseif raid_id == 23 then
-        -- E1-4
-        return nil
-    elseif raid_id == 31 then
-        -- P1-4
-        return nil
-    elseif raid_id == 32 then
-        -- P5-8
-        return nil
-    elseif raid_id == 34 then
-        -- M1-2
-        return nil
-    elseif raid_id == 35 then
-        -- M3-4
-        return nil
     end
     StopScript("NotImplemented", nil, "Raid", raid_id, "is not implemented")
 end
