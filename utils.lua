@@ -178,9 +178,7 @@ function wait_ready(max_wait, n_ready, stationary)
     n_ready = default(n_ready, 5)
     local ready_count = 0
     local ti = nil
-    local x = GetPlayerRawXPos()
-    local y = GetPlayerRawYPos()
-    local z = GetPlayerRawZPos()
+    local p = Entity.Player.Position
     if max_wait ~= nil then
         ti = ResetTimeout()
     end
@@ -190,10 +188,8 @@ function wait_ready(max_wait, n_ready, stationary)
                 n_ready)
         end
         wait(1)
-        if is_busy() or (stationary and GetDistanceToPoint(x, y, z) > 1) then
-            x = GetPlayerRawXPos()
-            y = GetPlayerRawYPos()
-            z = GetPlayerRawZPos()
+        if is_busy() or (stationary and Vector3.Distance(p, Entity.Player.Position) > 1) then
+            p = Entity.Player.Position
             ready_count = 0
         else
             ready_count = ready_count + 1

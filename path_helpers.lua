@@ -1,5 +1,6 @@
 require 'utils'
 require 'luasharp'
+require 'hard_ipc'
 import "System.Numerics"
 import "System"
 
@@ -86,10 +87,16 @@ function WalkTo(x, y, z, range)
 end
 
 function pathfind_with_tolerance(vec3, fly, tolerance)
-    local resultType = Type.GetType(
-        'System.Threading.Tasks.Task`1[System.Collections.Generic.List`1[System.Numerics.Vector3]]')
-    return await(invoke_ipc('vnavmesh.Nav.PathfindWithTolerance', resultType,
-        { nil, nil, luanet.ctype(Boolean), luanet.ctype(Single) }, Entity.Player.Position, vec3, fly, tolerance))
+    require_ipc('vnavmesh.Nav.PathfindWithTolerance',
+        Type.GetType('System.Threading.Tasks.Task`1[System.Collections.Generic.List`1[System.Numerics.Vector3]]'),
+        {
+            Type.GetType('System.Numerics.Vector3'),
+            Type.GetType('System.Numerics.Vector3'),
+            Type.GetType('System.Boolean'),
+            Type.GetType('System.Single')
+        }
+    )
+    return await(invoke_ipc('vnavmesh.Nav.PathfindWithTolerance', Entity.Player.Position, vec3, fly, tolerance))
 end
 
 function ZoneTransition()
