@@ -8,8 +8,11 @@ function require_ipc(ipc_signature, result_type, arg_types)
         log_debug("IPC already loaded", ipc_signature)
         return
     end
-    arg_types[#arg_types + 1] = result_type
+    arg_types[#arg_types + 1] = default(result_type, Type.GetType('System.Object'))
     local method = get_generic_method(Svc.PluginInterface, 'GetIpcSubscriber', arg_types)
+    if method.Invoke == nil then
+        StopScript("GetIpcSubscriber not found", CallerName(false), "No IPC subscriber for", #arg_types, "arguments")
+    end
     local sig = luanet.make_array(Object, { ipc_signature })
     subscriber = method:Invoke(Svc.PluginInterface, sig)
     if subscriber == nil then
@@ -23,8 +26,22 @@ function invoke_ipc(ipc_signature, ...)
     if subscriber == nil then
         StopScript("IPC not ready", CallerName(false), "signature:", ipc_signature, "is not loaded")
     end
+    local result = subscriber:InvokeFunc(...)
+    if result == subscriber then
+        StopScript("IPC failed", CallerName(false), "signature:", ipc_signature)
+    end
+    return result
+end
 
-    return subscriber:InvokeFunc(...)
+function invoke_action(ipc_signature, ...)
+    local subscriber = ipc_cache[ipc_signature]
+    if subscriber == nil then
+        StopScript("IPC not ready", CallerName(false), "signature:", ipc_signature, "is not loaded")
+    end
+    local result = subscriber:InvokeAction(...)
+    if result == subscriber then
+        StopScript("IPC failed", CallerName(false), "signature:", ipc_signature)
+    end
 end
 
 function get_generic_method(object, method_name, genericTypes)
