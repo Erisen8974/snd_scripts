@@ -1,5 +1,6 @@
 require 'utils'
 require 'path_helpers'
+require 'inventory_buddy'
 
 
 function PeluPelu(n)
@@ -12,6 +13,18 @@ function MamoolJa(n)
     GetBeastTribeQuest("Kageel Ja", "Botanist",
         "H4sIAAAAAAAACu2V32/TMBDH/5Xqnk0U50cX+w2VbeqmlrIVyop48MitsZT4SuyApir/O3KabgsbvIKgT777xrk7331k72CuKgQJH7TVbnSpNojl6EKNZtQYBwzOa2q2IOG92XgLc2BwRpSDDBnMlGlU2ZlLVW/QnStXYD11WHXiSt1vSRtnQX7awYKsdpoMyB18BJlmWRBlIk0Z3IB8xZMoyAQfZwzWIE9iHvCTcdwyWJPB6RuQnGeCwZXKdWNBCiFE4Eugb1ihcV2+hXLFnTY5yDtVWmQwNQ5r9cWttCve+iDhUOsPD0P1p0JDn+emX9fd2jKwBX0//KTJ2Gc5uwCcwWlFDg+5HVa9+brb0TvvGrTuqX2NX/cdpttevna0nZDJ+8pCBpe6LCfdmLx3RY3Dx/NMCuUmVFXKd8MLvt6V0u6xUO+dUT0M6sWlrnBmB+7p8nkzWgZTuyiUcVQ9BPUjAGmasmQwR8ztHqTD5z0g2myW91v0U/Qx5pTjww7vXNAtyLBlLzCTBHwci+TATBIIHidRz0wcJFkm0l9Cw8MhMvwpMq5ujsT8RcTs5/FngYl+c8Ucefk3bxgRJFHy8qMUiSAep+KIi/w/cfnc/gA+PsqiMAkAAA==",
         true, n)
+end
+
+function Ananta(n)
+    GetBeastTribeQuest("Eshana", "Viper",
+        "H4sIAAAAAAAACu2S32/TMBDH/xV0zyZynDRN/TaVbSqopbSVyop48JbbYinxlfgCqqr+78hpOlZ+SCDxANKefPe1fff1+bOHmakRNFw449i8WOAWBFw31G6DWFUWiyXdWeQdCLgiKkBLAVPjWlN14co0D8jXhktsJox1J67NbkvWsQf9YQ9z8pYtOdB7eA/6pYqjOMmyWAm4AT3MojRJlBKwAa1UHKWpzNODgA05nLwC3R1cmMK2HrSKQnv6jDU6Bh0LmBsu760rQHPTooCJY2zMHa8tl2/DfXmu9Q9GXxpn4HzvO6cyNLvp1023HgT4kr6cLllyHvS9qfyTzl2BWMBlTYwnB4x1H150J/rkXYuen8ZL/HQcMd328pJpOyZX9M6kgDe2qsbUhgFIAQtqGftXgYBxaXhMdW3CSIIQ/K6N5W9GQ3ZFzXnRIK5sjVN/ll6ufhzGQcDEz0vjmOrHouEfQLu2qgTMEAs/PTo8/soREOseVrstgh6NQokZFfh4PySv6Ra0PIifMDOM4iyRMu08DLIojgejbHiEJkmiQa5k/itokr8FzTMu/wsuWTRI1UDlJ1xkPhzlWY+LikaJksPfxEU+4zL7Z3Hpt/+Il4+Hr7kva+v3BgAA",
+        false, n)
+end
+
+function Namazu(n)
+    GetBeastTribeQuest("Seigetsu the Enlightened", "Culinarian",
+        "H4sIAAAAAAAACmVSwW7bMAz9leGdtcBNljrRrcjaIhuSZUmArBl2UGu2FmCJnkVtyAL/eyHH7ZrtRPKJ5HskdcTSOIJOxvyJ79ZUQ+G24VhD46qqLBUbfrAkByjcMBfQmcLC+Giqzt2a5onk1khJzVzIdeDOHGq2XgL09yNWHKxY9tBHfIN+n+f5YPxhPB4p3EFfDPPBJJtkucIeejoZTEejy1Zhz57mH6Evh0OFtSlsDNCjQWLnX+TIS0e1MlI+Wl9ASxNJYe6FGvMgOyvll1SfnWP9vDhH/5GYJZq73u472yqEkn+/FFn2AfrRVOENZ9fgQuHasdALt5Dr3asuow++Rgry1t/Qz9Nu+b6HN8L1jH3RK8sUPtuqmnHsR19zFPo7z6w0MmPnTFpGApLenbHpCr3QFN1wc940gVvraBHOwuvt/8toFeZhVRov7F6bpgtA+1hVCkuiIixOCvvn09ew/ml7qAl6Ok09llzQa0YKPvE9dNb+aJ8BmufVw5ICAAA=",
+        false, n)
 end
 
 function GetBeastTribeQuest(npc, class, path, one_per, n)
