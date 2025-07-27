@@ -9,15 +9,15 @@ local GBR_WAITING = GBR .. '.IsAutoGatherWaiting'
 local GBR_SET_AUTO_GATHER = GBR .. '.SetAutoGatherEnabled'
 
 function gbr_gather(max_time)
-    require_ipc(GBR_SET_AUTO_GATHER, nil, { Type.GetType('System.Boolean') })
+    require_ipc(GBR_SET_AUTO_GATHER, nil, { 'System.Boolean' })
     invoke_action(GBR_SET_AUTO_GATHER, true)
     wait_gbr_idle(max_time)
     invoke_action(GBR_SET_AUTO_GATHER, false)
 end
 
 function wait_gbr_idle(max_wait)
-    require_ipc(GBR_WAITING, Type.GetType('System.Boolean'), {})
-    require_ipc(GBR_ENABLED, Type.GetType('System.Boolean'), {})
+    require_ipc(GBR_WAITING, 'System.Boolean', {})
+    require_ipc(GBR_ENABLED, 'System.Boolean', {})
     local ti = nil
     if max_wait ~= nil then
         ti = ResetTimeout()

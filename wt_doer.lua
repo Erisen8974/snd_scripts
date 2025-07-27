@@ -8,6 +8,7 @@ function reset_blacklist()
     duty_blacklist = {
         577, -- P1T6 ex, no module support, falls off the platform
         --720, -- emanation ex, no module support, sometimes works, depends if the vril mech is used too fast
+        748, -- Phantom train, gets caught by the ghosties and gets stuck
     }
 end
 
@@ -221,15 +222,18 @@ function extract_level(duty)
 end
 
 local UNSUPPORTED_RAID_IDS = {
-    26,27,28,29,30, -- Alliance raids by expansion
-    23,24,25, -- Eden
-    31,32,33, -- Pandora
-    34,35, -- AAC Light-heavyweight
+    26, 27, 28, 29, 30, -- Alliance raids by expansion
+    23, 24, 25,         -- Eden
+    31, 32, 33,         -- Pandora
+    34, 35,             -- AAC Light-heavyweight
 }
 
 function raid_id_to_duty(raid_id)
     if list_contains(UNSUPPORTED_RAID_IDS, raid_id) then
         return nil
+    elseif raid_id == 4 then
+        -- Final Coil of Bahamut
+        return get_content_row(195) -- Turn 3
     elseif raid_id == 6 then
         -- Alexander: The Son
         return get_content_row(520) -- Fist of the Son

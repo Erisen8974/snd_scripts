@@ -8,7 +8,13 @@ function require_ipc(ipc_signature, result_type, arg_types)
         log_debug("IPC already loaded", ipc_signature)
         return
     end
-    arg_types[#arg_types + 1] = default(result_type, Type.GetType('System.Object'))
+    arg_types[#arg_types + 1] = default(result_type, 'System.Object')
+    for i, v in ipairs(arg_types) do
+        if type(v) ~= 'string' then
+            StopScript("Bad argument", CallerName(false), "argument types shound be strings")
+        end
+        arg_types[i] = Type.GetType(v)
+    end
     local method = get_generic_method(Svc.PluginInterface, 'GetIpcSubscriber', arg_types)
     if method.Invoke == nil then
         StopScript("GetIpcSubscriber not found", CallerName(false), "No IPC subscriber for", #arg_types, "arguments")

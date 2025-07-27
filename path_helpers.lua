@@ -88,12 +88,12 @@ end
 
 function pathfind_with_tolerance(vec3, fly, tolerance)
     require_ipc('vnavmesh.Nav.PathfindWithTolerance',
-        Type.GetType('System.Threading.Tasks.Task`1[System.Collections.Generic.List`1[System.Numerics.Vector3]]'),
+        'System.Threading.Tasks.Task`1[System.Collections.Generic.List`1[System.Numerics.Vector3]]',
         {
-            Type.GetType('System.Numerics.Vector3'),
-            Type.GetType('System.Numerics.Vector3'),
-            Type.GetType('System.Boolean'),
-            Type.GetType('System.Single')
+            'System.Numerics.Vector3',
+            'System.Numerics.Vector3',
+            'System.Boolean',
+            'System.Single'
         }
     )
     return await(invoke_ipc('vnavmesh.Nav.PathfindWithTolerance', Entity.Player.Position, vec3, fly, tolerance))
