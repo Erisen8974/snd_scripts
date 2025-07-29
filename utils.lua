@@ -369,6 +369,26 @@ end
 -- Error Handling --
 --------------------
 
+function require_plugins(plugins)
+    if #plugins == 0 then
+        return
+    end
+    for p in luanet.each(Svc.PluginInterface.InstalledPlugins) do
+        for i, v in ipairs(plugins) do
+            if p.IsLoaded and p.InternalName == v then
+                table.remove(plugins, i)
+                if #plugins == 0 then
+                    return
+                end
+                break
+            end
+        end
+    end
+    if #plugins > 0 then
+        StopScript("Missing required plugins", CallerName(false), "Missing plugins:", table.concat(plugins, ", "))
+    end
+end
+
 function StopScript(message, caller, ...)
     caller = default(caller, CallerName())
     log("Fatal error " .. message .. " in " .. caller .. ": ", ...)
