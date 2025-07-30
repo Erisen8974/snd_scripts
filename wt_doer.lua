@@ -223,7 +223,7 @@ end
 
 local UNSUPPORTED_RAID_IDS = {
     26, 27, 28, 29, 30, -- Alliance raids by expansion
-    23, 24, 25,         -- Eden
+    23, 24,             -- Eden
     31, 32, 33,         -- Pandora
     34, 35,             -- AAC Light-heavyweight
 }
@@ -231,6 +231,9 @@ local UNSUPPORTED_RAID_IDS = {
 function raid_id_to_duty(raid_id)
     if list_contains(UNSUPPORTED_RAID_IDS, raid_id) then
         return nil
+    elseif raid_id == 2 then
+        -- Binding Coil of Bahamut
+        return get_content_row(242) -- Turn 2
     elseif raid_id == 4 then
         -- Final Coil of Bahamut
         return get_content_row(195) -- Turn 3
@@ -242,10 +245,14 @@ function raid_id_to_duty(raid_id)
         return get_content_row(580) -- Eyes of the Creator
     elseif raid_id == 9 then
         -- Sigmascape
-        return get_content_row(748) -- Phantom Train
+        --return get_content_row(748) -- Phantom Train
+        return get_content_row(750) -- TV guy
     elseif raid_id == 10 then
         -- Alphascape
         return get_content_row(798) -- Chaos!
+    elseif raid_id == 25 then
+        -- Edens Promise
+        return get_content_row(943) -- Litany
     end
     StopScript("NotImplemented", nil, "Raid", raid_id, "is not implemented")
 end
