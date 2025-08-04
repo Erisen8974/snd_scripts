@@ -21,45 +21,6 @@ function GetTargetName()
     return t.Name
 end
 
-function GetPlayerRawXPos()
-    if Entity == nil then
-        return nil
-    end
-    if Entity.Player == nil then
-        return nil
-    end
-    if Entity.Player.Position == nil then
-        return nil
-    end
-    return Entity.Player.Position.X
-end
-
-function GetPlayerRawYPos()
-    if Entity == nil then
-        return nil
-    end
-    if Entity.Player == nil then
-        return nil
-    end
-    if Entity.Player.Position == nil then
-        return nil
-    end
-    return Entity.Player.Position.Y
-end
-
-function GetPlayerRawZPos()
-    if Entity == nil then
-        return nil
-    end
-    if Entity.Player == nil then
-        return nil
-    end
-    if Entity.Player.Position == nil then
-        return nil
-    end
-    return Entity.Player.Position.Z
-end
-
 function GetCharacterCondition(cond)
     return Svc.Condition[cond]
 end
@@ -83,10 +44,6 @@ end
 
 function PathMoveTo(x, y, z, fly)
     IPC.vnavmesh.PathfindAndMoveTo(Vector3(x, y, z), fly)
-end
-
-function GetZoneID()
-    return Svc.ClientState.TerritoryType
 end
 
 function GetNodeText(name, ...)
