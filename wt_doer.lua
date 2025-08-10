@@ -224,7 +224,7 @@ end
 local UNSUPPORTED_RAID_IDS = {
     26, 27, 28, 29, 30, -- Alliance raids by expansion
     23, 24,             -- Eden
-    31, 32, 33,         -- Pandora
+    31, 32, 33, 37,     -- Pandora
     34, 35,             -- AAC Light-heavyweight
 }
 
