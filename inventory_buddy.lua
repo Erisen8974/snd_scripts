@@ -1,6 +1,29 @@
 require 'utils'
 
 
+ALL_INVENTORIES = {
+    InventoryType.Inventory1,
+    InventoryType.Inventory2,
+    InventoryType.Inventory3,
+    InventoryType.Inventory4,
+}
+
+ALL_ARMORY = {
+    InventoryType.ArmoryHead,
+    InventoryType.ArmoryBody,
+    InventoryType.ArmoryHands,
+    InventoryType.ArmoryLegs,
+    InventoryType.ArmoryFeets,
+    InventoryType.ArmoryEar,
+    InventoryType.ArmoryNeck,
+    InventoryType.ArmoryWrist,
+    InventoryType.ArmoryRings,
+    InventoryType.ArmoryMainHand,
+    InventoryType.ArmoryOffHand,
+}
+
+
+
 
 item_info_list = {
     -- ARR Maps
@@ -99,5 +122,15 @@ function equip_gearset(gearset_name)
         end
     end
     log_debug("Gearset", gearset_name, "not found")
+    return false
+end
+
+function move_to_inventory(item)
+    for _, destination in ipairs(ALL_INVENTORIES) do
+        if Inventory.GetInventoryContainer(destination).FreeSlots > 0 then
+            item:MoveItemSlot(destination)
+            return true
+        end
+    end
     return false
 end
