@@ -397,8 +397,7 @@ function StopScript(message, caller, ...)
     IPC.visland.StopRoute()
     IPC.vnavmesh.Stop()
     yield("/snd stop all")
-    local die = nil
-    die() -- crash cause idk how to stop
+    luanet.error(logify(message, ...))
 end
 
 function CallerName(string)
@@ -436,6 +435,12 @@ end
 function log_debug(...)
     if is_debug then
         log(...)
+    end
+end
+
+function log_debug_array(...)
+    if is_debug then
+        log_array(...)
     end
 end
 

@@ -1,4 +1,5 @@
 require 'utils'
+require 'luasharp'
 import "System"
 
 ipc_cache = {}
@@ -48,31 +49,4 @@ function invoke_action(ipc_signature, ...)
     if result == subscriber then
         StopScript("IPC failed", CallerName(false), "signature:", ipc_signature)
     end
-end
-
-function get_generic_method(object, method_name, genericTypes)
-    local targetType
-    if object.GetType then
-        targetType = object:GetType()
-    else
-        targetType = object
-    end
-    local genericArgsArr = luanet.make_array(Type, genericTypes)
-    local methods = targetType:GetMethods()
-    for i = 0, methods.Length - 1 do
-        local m = methods[i]
-        if m.Name == method_name and m.IsGenericMethodDefinition and m:GetGenericArguments().Length == genericArgsArr.Length then
-            local constructed = nil
-            local success, err = pcall(function()
-                constructed = m:MakeGenericMethod(genericArgsArr)
-            end)
-            if success then
-                return constructed
-            else
-                StopScript("Error constructing generic method", CallerName(false), err)
-            end
-        end
-    end
-    StopScript("No generic method found", CallerName(false), "No matching generic method found for", method_name, "with",
-        #genericTypes, "generic args")
 end

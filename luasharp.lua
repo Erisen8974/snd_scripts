@@ -13,9 +13,18 @@ function await(o, max_wait)
     return o.Result
 end
 
-function make_list(type, ...)
-    local a = luanet.make_array(type, { ... })
-    return Enumerable.ToList(a)
+function make_list(content_type, ...)
+    local t = Type.GetType(("System.Collections.Generic.List`1[%s]"):format(content_type))
+    log_debug("Making list of type", t)
+    local l = make_instance(t)
+    log_debug("List made", l)
+    local args = table.pack(...)
+    for i = 1, args.n do
+        l:Add(args[i])
+    end
+    log_debug("Initial items added")
+    log_debug_list(l)
+    return l
 end
 
 function assembly_name(inputstr)
@@ -145,4 +154,68 @@ function make_binding_flags(bindings)
         flags = flags | BindingFlags.Static.value__
     end
     return luanet.enum(BindingFlags, flags)
+end
+
+function make_calling_conventions(callingConventions)
+    if CallingConventions == nil then
+        CallingConventions = load_type('System.Reflection.CallingConventions')
+    end
+
+    callingConventions = default(callingConventions, {})
+
+    local flags = 0
+    if default(callingConventions.standard, false) then
+        flags = flags | CallingConventions.Standard.value__
+    end
+    if default(callingConventions.varargs, false) then
+        flags = flags | CallingConventions.VarArgs.value__
+    end
+    if default(callingConventions.any, false) then
+        flags = flags | CallingConventions.Any.value__
+    end
+    if default(callingConventions.hasthis, false) then
+        flags = flags | CallingConventions.HasThis.value__
+    end
+    if default(callingConventions.explicitthis, false) then
+        flags = flags | CallingConventions.ExplicitThis.value__
+    end
+    return luanet.enum(CallingConventions, flags)
+end
+
+--- ########################
+--- ####### Generics #######
+--- ########################
+function get_generic_method(object, method_name, genericTypes)
+    local targetType
+    if object.GetType then
+        targetType = object:GetType()
+    else
+        targetType = object
+    end
+    local genericArgsArr = luanet.make_array(Type, genericTypes)
+    local methods = targetType:GetMethods()
+    for i = 0, methods.Length - 1 do
+        local m = methods[i]
+        if m.Name == method_name and m.IsGenericMethodDefinition and m:GetGenericArguments().Length == genericArgsArr.Length then
+            local constructed = nil
+            local success, err = pcall(function()
+                constructed = m:MakeGenericMethod(genericArgsArr)
+            end)
+            if success then
+                return constructed
+            else
+                StopScript("Error constructing generic method", CallerName(false), err)
+            end
+        end
+    end
+    StopScript("No generic method found", CallerName(false), "No matching generic method found for", method_name, "with",
+        #genericTypes, "generic args")
+end
+
+function make_instance(targetType)
+    local arg_array = Object[0]
+    local arg_type_array = Type[0]
+    local constructor = targetType:GetConstructor(make_binding_flags(), nil,
+        make_calling_conventions({ hasthis = true }), arg_type_array, nil)
+    return constructor:Invoke(arg_array)
 end

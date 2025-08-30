@@ -40,17 +40,25 @@ end
 
 function custom_path(fly, waypoints)
     local vec_waypoints = {}
+    log_debug("Setting up")
+    log_debug_table(vec_waypoints)
+    log_debug_table(waypoints)
     for i, waypoint in ipairs(waypoints) do
         if type(waypoint) == "table" then
             local x, y, z = table.unpack(waypoint)
-            vec_waypoints[#vec_waypoints + 1] = Vector3(x, y, z)
+            vec_waypoints[i] = Vector3(x, y, z)
         elseif type(waypoint) == "userdata" then -- it better be a vector3
-            vec_waypoints[#vec_waypoints + 1] = waypoint
+            vec_waypoints[i] = waypoint
         else
             StopScript("Invalid waypoint type", CallerName(false), "Type:", type(waypoint))
         end
     end
-    IPC.vnavmesh.MoveTo(make_list(Vector3, table.unpack(vec_waypoints)), fly)
+    log_debug("Calling moveto")
+    log_debug_table(vec_waypoints)
+    local list_waypoints = make_list("System.Numerics.Vector3", table.unpack(vec_waypoints))
+    log_debug(list_waypoints)
+    log_debug_list(list_waypoints)
+    IPC.vnavmesh.MoveTo(list_waypoints, fly)
 end
 
 function xyz_to_vec3(x, y, z)

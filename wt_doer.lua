@@ -6,6 +6,7 @@ require 'inventory_buddy'
 local duty_blacklist = {}
 function reset_blacklist()
     duty_blacklist = {
+        447, -- Limitless Blue, doesnt touch the hookshots
         577, -- P1T6 ex, no module support, falls off the platform
         --720, -- emanation ex, no module support, sometimes works, depends if the vril mech is used too fast
         748, -- Phantom train, gets caught by the ghosties and gets stuck
@@ -96,7 +97,7 @@ function wt_duty()
             local duty = Player.Bingo:GetWeeklyBingoOrderDataRow(i)
             local content = wt_pick_duty(duty)
             if content == nil then
-                log_debug("Bingo cell", i, "not supported type", wt_item_name(duty))
+                log("Bingo cell", i, "not supported type", duty.Data, '-', wt_item_name(duty))
             else
                 -- try to do the duty
                 local instance_id = content.TerritoryType.RowId
@@ -106,6 +107,8 @@ function wt_duty()
                         IPC.AutoDuty.ContentHasPath(instance_id))
                     run_content(type, unsync, instance_id)
                     return true
+                else
+                    log("Bingo cell", i, "not executable", duty.Data, '-', wt_item_name(duty))
                 end
             end
         end
@@ -192,7 +195,7 @@ function wt_pick_high_level_duty(level)
     elseif level == 90 then
         --return get_content_row(973)  --The Dead Ends, not stable, first boss has mechanic requiring 2 players
         --return get_content_row(976)  --Smileton, no bossmod support
-        return get_content_row(1070) --The Fell Court of Troia, no bossmod support
+        return get_content_row(1070) --The Fell Court of Troia
     elseif level == 100 then
         return get_content_row(1266) --The Underkeep
     end
@@ -225,7 +228,7 @@ local UNSUPPORTED_RAID_IDS = {
     26, 27, 28, 29, 30, -- Alliance raids by expansion
     23, 24,             -- Eden
     31, 32, 33, 37,     -- Pandora
-    34, 35,             -- AAC Light-heavyweight
+    34, 35, 38, 36      -- AAC
 }
 
 function raid_id_to_duty(raid_id)
@@ -237,12 +240,18 @@ function raid_id_to_duty(raid_id)
     elseif raid_id == 4 then
         -- Final Coil of Bahamut
         return get_content_row(195) -- Turn 3
+    elseif raid_id == 5 then
+        -- Alexander: The Father
+        return get_content_row(442) -- Fist of the Father
     elseif raid_id == 6 then
         -- Alexander: The Son
         return get_content_row(520) -- Fist of the Son
     elseif raid_id == 7 then
         -- Alexander: The Creator
         return get_content_row(580) -- Eyes of the Creator
+    elseif raid_id == 8 then
+        -- Deltascape
+        return get_content_row(693) -- V3
     elseif raid_id == 9 then
         -- Sigmascape
         --return get_content_row(748) -- Phantom Train
