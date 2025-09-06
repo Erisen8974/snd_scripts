@@ -127,7 +127,7 @@ function run_content(type, unsync, instance_id)
         log_debug("Duty failed? Still in instance?", Svc.ClientState.TerritoryType, instance_id)
         table.insert(duty_blacklist, instance_id)
         if Svc.ClientState.TerritoryType == instance_id then
-            yield('/pdfleave')
+            InstancedContent.LeaveCurrentContent()
         end
         wait_ready()
     end

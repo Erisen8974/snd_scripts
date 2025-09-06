@@ -16,7 +16,7 @@ end
 function make_list(content_type, ...)
     local t = Type.GetType(("System.Collections.Generic.List`1[%s]"):format(content_type))
     log_debug("Making list of type", t)
-    local l = make_instance(t)
+    local l = Activator.CreateInstance(t) --make_instance(t)
     log_debug("List made", l)
     local args = table.pack(...)
     for i = 1, args.n do

@@ -108,7 +108,8 @@ function get_item_info_by_id(item_id)
     end
 end
 
-function equip_gearset(gearset_name)
+function equip_gearset(gearset_name, update_after)
+    update_after = default(update_after, false)
     local ti = ResetTimeout()
     for gs in luanet.each(Player.Gearsets) do
         if gs.Name == gearset_name then
@@ -118,10 +119,36 @@ function equip_gearset(gearset_name)
                 wait_ready(10, 1)
             until Player.Gearset.Name == gearset_name
             log_debug("Gearset", gearset_name, "equipped")
+            if update_after then
+                Player.Gearset:Update()
+            end
             return true
         end
     end
     log_debug("Gearset", gearset_name, "not found")
+    return false
+end
+
+function equip_classjob(classjob_abrev, update_after)
+    update_after = default(update_after, false)
+    local ti = ResetTimeout()
+    for gs in luanet.each(Player.Gearsets) do
+        if luminia_row_checked("ClassJob", gs.ClassJob).Abbreviation == classjob_abrev then
+            gearset_name = gs.Name
+            log_debug("Equipping gearset", gearset_name, "for class/job", classjob_abrev)
+            repeat
+                CheckTimeout(10, ti, CallerName(false), "Couldnt equip gearset:", gearset_name)
+                gs:Equip()
+                wait_ready(10, 1)
+            until Player.Gearset.Name == gearset_name
+            log_debug("Gearset", gearset_name, "equipped")
+            if update_after then
+                Player.Gearset:Update()
+            end
+            return true
+        end
+    end
+    log_debug("No gearset found for class/job", classjob_abrev)
     return false
 end
 
