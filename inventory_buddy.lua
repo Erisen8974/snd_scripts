@@ -131,6 +131,7 @@ end
 
 function equip_classjob(classjob_abrev, update_after)
     update_after = default(update_after, false)
+    classjob_abrev = classjob_abrev:upper()
     local ti = ResetTimeout()
     for gs in luanet.each(Player.Gearsets) do
         if luminia_row_checked("ClassJob", gs.ClassJob).Abbreviation == classjob_abrev then
