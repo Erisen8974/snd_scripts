@@ -206,10 +206,13 @@ function move_items(source_inv, dest_inv, lowest_item_id, highest_item_id)
                             end
                         end
                     end
+                    if need_move then
+                        return false -- found an item to move with no space available
+                    end
                 end
             end
         end
         source_idx = source_idx + 1
     end
-    return true
+    return true -- all items if any were able to be moved
 end
