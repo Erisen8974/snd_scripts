@@ -162,3 +162,54 @@ function move_to_inventory(item)
     end
     return false
 end
+
+function move_items(source_inv, dest_inv, lowest_item_id, highest_item_id)
+    if lowest_item_id == nil then
+        StopScript("BadArguments", CallerName(false), "Item id [or range] is required to move items")
+    end
+    highest_item_id = default(highest_item_id, lowest_item_id)
+    if type(source_inv) ~= "table" then
+        source_inv = { source_inv }
+    end
+    if type(dest_inv) ~= "table" then
+        dest_inv = { dest_inv }
+    end
+    local source_idx = 1
+    local dest_idx = 1
+    local destinv = nil
+    while source_idx <= #source_inv do
+        local sourceinv = Inventory.GetInventoryContainer(source_inv[source_idx])
+        if sourceinv == nil then
+            StopScript("No inventory", CallerName(false), source_inv[source_idx])
+        else
+            destinv = Inventory.GetInventoryContainer(dest_inv[dest_idx])
+            if destinv == nil then
+                StopScript("No inventory", CallerName(false), dest_inv[dest_idx])
+            end
+            for item in luanet.each(sourceinv.Items) do
+                if lowest_item_id <= item.ItemId and item.ItemId <= highest_item_id then
+                    local need_move = true
+                    while dest_idx <= #dest_inv and need_move do
+                        if destinv.FreeSlots > 0 then
+                            log("Moving", item.ItemId, "from", source_inv[source_idx], "to", dest_inv[dest_idx])
+                            item:MoveItemSlot(dest_inv[dest_idx])
+                            need_move = false
+                            wait(0)
+                        else
+                            log_debug("No space to move item to", dest_inv[dest_idx])
+                            dest_idx = dest_idx + 1
+                            if dest_idx <= #dest_inv then
+                                destinv = Inventory.GetInventoryContainer(dest_inv[dest_idx])
+                                if destinv == nil then
+                                    StopScript("No inventory", CallerName(false), dest_inv[dest_idx])
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        source_idx = source_idx + 1
+    end
+    return true
+end
