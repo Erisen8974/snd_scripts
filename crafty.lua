@@ -30,7 +30,7 @@ function DoCraft(item_info, amt)
     until not ArtisanGetEnduranceStatus()
     if id ~= 0 then
         if GetItemCount(id) == before then
-            log_debug("Craft failed for item", item_info.itemName, "still have", before)
+            log_(LEVEL_INFO, log, "Craft failed for item", item_info.itemName, "still have", before)
             return false -- item didnt craft
         end
     end

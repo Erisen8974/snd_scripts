@@ -118,14 +118,14 @@ function equip_gearset(gearset_name, update_after)
                 gs:Equip()
                 wait_ready(10, 1)
             until Player.Gearset.Name == gearset_name
-            log_debug("Gearset", gearset_name, "equipped")
+            log_(LEVEL_INFO, log, "Gearset", gearset_name, "equipped")
             if update_after then
                 Player.Gearset:Update()
             end
             return true
         end
     end
-    log_debug("Gearset", gearset_name, "not found")
+    log_(LEVEL_ERROR, log, "Gearset", gearset_name, "not found")
     return false
 end
 
@@ -136,20 +136,20 @@ function equip_classjob(classjob_abrev, update_after)
     for gs in luanet.each(Player.Gearsets) do
         if luminia_row_checked("ClassJob", gs.ClassJob).Abbreviation == classjob_abrev then
             gearset_name = gs.Name
-            log_debug("Equipping gearset", gearset_name, "for class/job", classjob_abrev)
+            log_(LEVEL_INFO, log, "Equipping gearset", gearset_name, "for class/job", classjob_abrev)
             repeat
                 CheckTimeout(10, ti, CallerName(false), "Couldnt equip gearset:", gearset_name)
                 gs:Equip()
                 wait_ready(10, 1)
             until Player.Gearset.Name == gearset_name
-            log_debug("Gearset", gearset_name, "equipped")
+            log_(LEVEL_VERBOSE, log, "Gearset", gearset_name, "equipped")
             if update_after then
                 Player.Gearset:Update()
             end
             return true
         end
     end
-    log_debug("No gearset found for class/job", classjob_abrev)
+    log_(LEVEL_ERROR, log, "No gearset found for class/job", classjob_abrev)
     return false
 end
 
@@ -196,7 +196,7 @@ function move_items(source_inv, dest_inv, lowest_item_id, highest_item_id)
                             need_move = false
                             wait(0)
                         else
-                            log_debug("No space to move item to", dest_inv[dest_idx])
+                            log_(LEVEL_INFO, log, "No space to move item to", dest_inv[dest_idx])
                             dest_idx = dest_idx + 1
                             if dest_idx <= #dest_inv then
                                 destinv = Inventory.GetInventoryContainer(dest_inv[dest_idx])

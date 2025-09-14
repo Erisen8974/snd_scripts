@@ -10,9 +10,9 @@ local GBR_SET_AUTO_GATHER = GBR .. '.SetAutoGatherEnabled'
 
 function gbr_gather(max_time)
     require_ipc(GBR_SET_AUTO_GATHER, nil, { 'System.Boolean' })
-    invoke_action(GBR_SET_AUTO_GATHER, true)
+    invoke_ipc(GBR_SET_AUTO_GATHER, true)
     wait_gbr_idle(max_time)
-    invoke_action(GBR_SET_AUTO_GATHER, false)
+    invoke_ipc(GBR_SET_AUTO_GATHER, false)
 end
 
 function wait_gbr_idle(max_wait)

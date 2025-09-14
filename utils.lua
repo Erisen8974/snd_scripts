@@ -28,7 +28,7 @@ function resume_pyes()
     end
     pyes_pause_count = pyes_pause_count - 1
     if pyes_pause_count == 0 then
-        IPC.YesAlready.SetPluginEnabled(true)
+        --IPC.YesAlready.SetPluginEnabled(true)
     end
 end
 
@@ -122,15 +122,13 @@ function close_yes_no(accept, expected_text)
     end
 end
 
-function close_talk()
-    pause_pyes()
+function close_talk(first, ...)
     local ti = ResetTimeout()
-    while IsAddonReady("Talk") do
+    while (first ~= nil and not any_addons_ready(first, ...)) or (first == nil and GetCharacterCondition(32)) do
         yield("/click Talk Click")
-        CheckTimeout(1, ti, CallerName(false), "Finishing talking")
+        CheckTimeout(10, ti, CallerName(false), "Finishing talking")
         wait(.1)
     end
-    resume_pyes()
 end
 
 function close_addon(addon)
@@ -138,18 +136,26 @@ function close_addon(addon)
     while IsAddonReady(addon) do
         CheckTimeout(1, ti, CallerName(false), "Closing addon", addon)
         SafeCallback(addon, true, -1)
-        wait(0.1)
+        wait(0)
     end
 end
 
-function wait_any_addons(...)
+function any_addons_ready(...)
     target_addons = { ... }
+    for _, v in pairs(target_addons) do
+        if IsAddonReady(v) then
+            return v
+        end
+    end
+    return nil
+end
+
+function wait_any_addons(...)
     local ti = ResetTimeout()
     while true do
-        for _, v in pairs(target_addons) do
-            if IsAddonReady(v) then
-                return v
-            end
+        ready = any_addons_ready(...)
+        if ready ~= nil then
+            return ready
         end
         CheckTimeout(30, ti, CallerName(false), "Waiting for addons", ...)
         wait(0.1)
@@ -168,6 +174,7 @@ end
 
 function is_busy()
     return Player.IsBusy or GetCharacterCondition(6) or GetCharacterCondition(26) or GetCharacterCondition(27) or
+        GetCharacterCondition(43) or
         GetCharacterCondition(45) or GetCharacterCondition(51) or GetCharacterCondition(32) or
         not (GetCharacterCondition(1) or GetCharacterCondition(4)) or
         (not IPC.vnavmesh.IsReady()) or IPC.vnavmesh.PathfindInProgress() or IPC.vnavmesh.IsRunning()
@@ -225,6 +232,7 @@ ListSelectionType = {
     ContextMenu = { name_offset = 6, click_offset = 0 },
     RetainerList = { name_offset = 3, click_offset = 2 },
     SelectString = { name_offset = 3 },
+    SelectIconString = { name_offset = 3 },
 }
 
 -- 0 indexed
@@ -245,7 +253,7 @@ function GetListElement(menu, index)
         n = a:GetNode(1, 2, list_index(3, index), 2, 3)
     elseif menu == "RetainerList" then
         n = a:GetNode(1, 27, list_index(4, index), 2, 3)
-    elseif menu == "SelectString" then
+    elseif menu == "SelectString" or menu == "SelectIconString" then
         n = a:GetNode(1, 3, list_index(5, index), 2)
     else
         StopScript("Unknown addon", CallerName(false), menu)
@@ -272,7 +280,8 @@ function ListContents(menu)
     return list_items
 end
 
-function SelectInList(name, menu)
+function SelectInList(name, menu, partial_ok)
+    partial_ok = default(partial_ok, false)
     local string = name
     local click
     menu = default(menu, "ContextMenu")
@@ -284,7 +293,11 @@ function SelectInList(name, menu)
             local entry = GetListElement(menu, i)
             if entry == nil then break end
             log_debug("List item", entry)
-            if entry == string then
+            local match = entry:upper() == string:upper()
+            if not match and partial_ok then
+                match = entry:upper():find(string:upper())
+            end
+            if match then
                 click = i
                 break
             end
@@ -432,28 +445,34 @@ end
 --- Chat Logging ---
 --------------------
 
-function log_debug(...)
-    if is_debug then
-        log(...)
+LEVEL_VERBOSE = 9
+LEVEL_DEBUG = 7
+LEVEL_INFO = 5
+LEVEL_ERROR = 3
+LEVEL_CRITICAL = 1
+
+debug_level = default(debug_level, LEVEL_ERROR)
+
+function log_(level, logger, ...)
+    if debug_level >= level then
+        logger(...)
     end
+end
+
+function log_debug(...)
+    log_(LEVEL_DEBUG, log, ...)
 end
 
 function log_debug_array(...)
-    if is_debug then
-        log_array(...)
-    end
+    log_(LEVEL_DEBUG, log_array, ...)
 end
 
 function log_debug_table(...)
-    if is_debug then
-        log_table(...)
-    end
+    log_(LEVEL_DEBUG, log_table, ...)
 end
 
 function log_debug_list(...)
-    if is_debug then
-        log_list(...)
-    end
+    log_(LEVEL_DEBUG, log_list, ...)
 end
 
 function logify(first, ...)
@@ -473,6 +492,14 @@ function log_count(list, c)
     for i = 0, c - 1 do
         log(tostring(i) .. ': ' .. tostring(list[i]))
     end
+end
+
+function log_iterable(it)
+    log('---', it, '---')
+    for i in luanet.each(it) do
+        log(i)
+    end
+    log('--- end ---')
 end
 
 function log_list(list)

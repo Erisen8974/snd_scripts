@@ -38,6 +38,22 @@ function TownPath(town, x, y, z, shard, dest_town, ...)
     WalkTo(x, y, z)
 end
 
+function walk_path(path, fly, range)
+    local pos = path[path.Count - 1]
+    local ti = ResetTimeout()
+    IPC.vnavmesh.MoveTo(path, fly)
+    if not GetCharacterCondition(4) and path_length(path) > 40 then
+        Actions.ExecuteGeneralAction(9)
+    end
+    while (IPC.vnavmesh.IsRunning() or IPC.vnavmesh.PathfindInProgress()) do
+        CheckTimeout(60, ti, CallerName(false), "Waiting for pathfind")
+        if range ~= nil and Vector3.Distance(Entity.Player.Position, pos) <= range then
+            IPC.vnavmesh.Stop()
+        end
+        wait(0.1)
+    end
+end
+
 function custom_path(fly, waypoints)
     local vec_waypoints = {}
     log_debug("Setting up")
@@ -246,8 +262,12 @@ function path_distance_to(vec3, fly)
     if path.Count == 0 then -- if theres no path use the cartesian distance
         return Vector3.Distance(Entity.Player.Position, vec3)
     end
-    dist = 0
-    prev_point = Entity.Player.Position
+    return path_length(path)
+end
+
+function path_length(path)
+    local dist = 0
+    local prev_point = Entity.Player.Position
     for point in luanet.each(path) do
         dist = dist + Vector3.Distance(prev_point, point)
         prev_point = point

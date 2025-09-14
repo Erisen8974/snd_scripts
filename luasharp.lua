@@ -15,15 +15,29 @@ end
 
 function make_list(content_type, ...)
     local t = Type.GetType(("System.Collections.Generic.List`1[%s]"):format(content_type))
-    log_debug("Making list of type", t)
-    local l = Activator.CreateInstance(t) --make_instance(t)
-    log_debug("List made", l)
+    log_(LEVEL_VERBOSE, log, "Making list of type", t)
+    local l = Activator.CreateInstance(t)
+    log_(LEVEL_VERBOSE, log, "List made", l)
     local args = table.pack(...)
     for i = 1, args.n do
         l:Add(args[i])
     end
-    log_debug("Initial items added")
-    log_debug_list(l)
+    log_(LEVEL_VERBOSE, log, "Initial items added")
+    log_(LEVEL_VERBOSE, log_iterable, l)
+    return l
+end
+
+function make_set(content_type, ...)
+    local t = Type.GetType(("System.Collections.Generic.HashSet`1[%s]"):format(content_type))
+    log_(LEVEL_VERBOSE, log, "Making set of type", t)
+    local l = Activator.CreateInstance(t)
+    log_(LEVEL_VERBOSE, log, "Set made", l)
+    local args = table.pack(...)
+    for i = 1, args.n do
+        l:Add(args[i])
+    end
+    log_(LEVEL_VERBOSE, log, "Initial items added")
+    log_(LEVEL_VERBOSE, log_iterable, l)
     return l
 end
 
@@ -35,11 +49,11 @@ end
 
 function load_type(type_path)
     local assembly = assembly_name(type_path)
-    log_debug("Loading assembly", assembly)
+    log_(LEVEL_VERBOSE, log, "Loading assembly", assembly)
     luanet.load_assembly(assembly)
-    log_debug("Wrapping type", type_path)
+    log_(LEVEL_VERBOSE, log, "Wrapping type", type_path)
     local type_var = luanet.import_type(type_path)
-    log_debug("Wrapped type", type_var)
+    log_(LEVEL_VERBOSE, log, "Wrapped type", type_var)
     return type_var
 end
 
@@ -210,12 +224,4 @@ function get_generic_method(object, method_name, genericTypes)
     end
     StopScript("No generic method found", CallerName(false), "No matching generic method found for", method_name, "with",
         #genericTypes, "generic args")
-end
-
-function make_instance(targetType)
-    local arg_array = Object[0]
-    local arg_type_array = Type[0]
-    local constructor = targetType:GetConstructor(make_binding_flags(), nil,
-        make_calling_conventions({ hasthis = true }), arg_type_array, nil)
-    return constructor:Invoke(arg_array)
 end
