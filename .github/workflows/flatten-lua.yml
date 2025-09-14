@@ -2,6 +2,15 @@ name: Flatten Lua Scripts
 
 on:
   workflow_dispatch:
+    inputs:
+      force_all:
+        description: 'Run for all files (ignore changed files)'
+        required: false
+        default: 'false'
+      force_files:
+        description: 'Comma-separated list of files to force (e.g. moon_man,wt_doer)'
+        required: false
+        default: ''
   push:
     paths:
       - '*.lua'
@@ -49,18 +58,38 @@ jobs:
             metadata/${{ matrix.file }}.meta
             tails/${{ matrix.file }}.lua
 
+      - name: Determine if this file should be forced
+        id: should_run
+        run: |
+          force_all="${{ github.event.inputs.force_all }}"
+          force_files="${{ github.event.inputs.force_files }}"
+          file="${{ matrix.file }}"
+          should_run="false"
+          if [[ "$force_all" == "true" ]]; then
+            should_run="true"
+          elif [[ -n "$force_files" ]]; then
+            IFS=',' read -ra arr <<< "$force_files"
+            for f in "${arr[@]}"; do
+              if [[ "$f" == "$file" ]]; then
+                should_run="true"
+                break
+              fi
+            done
+          fi
+          echo "should_run=$should_run" >> $GITHUB_OUTPUT
+
       - name: Clone target repo
-        if: steps.changed.outputs.any_changed == 'true'
+        if: steps.changed.outputs.any_changed == 'true' || steps.should_run.outputs.should_run == 'true'
         run: |
           git clone https://x-access-token:${{ secrets.FLAT_SND_TOKEN }}@github.com/Erisen8974/flat_SND_scripts.git target-repo
 
       - name: Run exporter.py if relevant files changed
-        if: steps.changed.outputs.any_changed == 'true'
+        if: steps.changed.outputs.any_changed == 'true' || steps.should_run.outputs.should_run == 'true'
         run: |
           python exporter.py ${{ matrix.file }}.lua --output target-repo/${{ matrix.file }}_flat.lua
 
       - name: Commit and push
-        if: steps.changed.outputs.any_changed == 'true'
+        if: steps.changed.outputs.any_changed == 'true' || steps.should_run.outputs.should_run == 'true'
         run: |
           cd target-repo
           git config user.name "github-actions[bot]"
