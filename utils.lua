@@ -411,7 +411,6 @@ function StopScript(message, caller, ...)
     IPC.Lifestream.Abort()
     IPC.visland.StopRoute()
     IPC.vnavmesh.Stop()
-    yield("/snd stop all")
     luanet.error(logify(message, ...))
 end
 

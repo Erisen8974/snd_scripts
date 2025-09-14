@@ -1,1 +1,1 @@
-fish_relic(false)
+fish_relic(Config.Get("MaxResearch"))

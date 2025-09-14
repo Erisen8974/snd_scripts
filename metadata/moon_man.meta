@@ -15,5 +15,11 @@ plugins_to_disable:
 - TextAdvance
 - YesAlready
 
+configs:
+  MaxResearch:
+    default: false
+    description: Get research to cap instead of just target
+    type: bool
+    required: false
 [[End Metadata]]
 --]=====]
