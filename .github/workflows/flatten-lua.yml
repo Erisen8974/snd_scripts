@@ -1,6 +1,7 @@
 name: Flatten Lua Scripts
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - '*.lua'
