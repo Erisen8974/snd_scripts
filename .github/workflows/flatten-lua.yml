@@ -22,7 +22,7 @@ jobs:
 
       - id: set-matrix
         run: |
-          files=$(find metadata -type f -name '*.meta' -exec basename {} .meta \; | jq -R . | jq -s .)
+          files=$(find metadata -type f -name '*.meta' -exec basename {} .meta \; | jq -R . | jq -s -c .)
           echo "files=$files" >> $GITHUB_OUTPUT
 
   flatten:
