@@ -5,6 +5,8 @@ import "System"
 ipc_cache_actions = {}
 ipc_cache_functions = {}
 
+shared_data_cache = {}
+
 function require_ipc(ipc_signature, result_type, arg_types)
     if ipc_cache_actions[ipc_signature] ~= nil or ipc_cache_functions[ipc_signature] ~= nil then
         log_(LEVEL_DEBUG, log, "IPC already loaded", ipc_signature)
@@ -12,7 +14,7 @@ function require_ipc(ipc_signature, result_type, arg_types)
     end
     arg_types = default(arg_types, {})
     arg_types[#arg_types + 1] = default(result_type, 'System.Object')
-    for i, v in ipairs(arg_types) do
+    for i, v in pairs(arg_types) do
         if type(v) ~= 'string' then
             StopScript("Bad argument", CallerName(false), "argument types shound be strings")
         end
@@ -54,5 +56,33 @@ function invoke_ipc(ipc_signature, ...)
     local result = action_subscriber:InvokeAction(...)
     if result == action_subscriber then
         StopScript("IPC failed", CallerName(false), "signature:", ipc_signature)
+    end
+end
+
+function get_shared_data(tag, data_type)
+    if shared_data_cache[tag] ~= nil then
+        return shared_data_cache[tag]
+    end
+    local method = get_generic_method(Svc.PluginInterface, 'GetData', { Type.GetType(data_type) })
+    local sig = luanet.make_array(Object, { tag })
+    local so = method:Invoke(Svc.PluginInterface, sig)
+    if so == sig then
+        return nil
+    end
+    shared_data_cache[tag] = so
+    return so
+end
+
+function release_shared_data(tag)
+    if tag == nil then
+        for t, _ in pairs(shared_data_cache) do
+            log_(LEVEL_DEBUG, log, "Releasing shared data", t)
+            Svc.PluginInterface:RelinquishData(t)
+        end
+        shared_data_cache = {}
+    else
+        log_(LEVEL_DEBUG, log, "Releasing shared data", tag)
+        Svc.PluginInterface:RelinquishData(tag)
+        shared_data_cache[tag] = nil
     end
 end

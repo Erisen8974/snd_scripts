@@ -11,7 +11,10 @@ require 'inventory_buddy'
 -- Summoning Bell - summoning bell...
 -- Mesouaidonque - da goods!
 
-local WALK_THERSHOLD = 100
+local WALK_THRESHOLD = 100
+local RETURN_TO_SPOT = true
+local RETURN_RADIUS = 3
+local start_spot = Player.Entity.Position
 
 
 function ice_only_mission(s)
@@ -102,6 +105,13 @@ function on_moon()
     return list_contains({ 1237, 1291 }, Svc.ClientState.TerritoryType)
 end
 
+function return_to_craft()
+    log_(LEVEL_VERBOSE, log, "Craft return? Is crafter:", Player.Job.IsCrafter, "Setting enabled:", RETURN_TO_SPOT)
+    if RETURN_TO_SPOT and Player.Job.IsCrafter then
+        move_near_point(start_spot, RETURN_RADIUS)
+    end
+end
+
 function path_to_moon_thing(thing, distance)
     distance = default(distance, 3)
     if not on_moon() then
@@ -110,12 +120,12 @@ function path_to_moon_thing(thing, distance)
     end
     local e = get_closest_entity(thing)
     local path = nil
-    local path_len = WALK_THERSHOLD
+    local path_len = WALK_THRESHOLD
     if e.Position ~= nil then
         path = pathfind_with_tolerance(e.Position, false, distance)
         path_len = path_length(path)
     end
-    if path_len >= WALK_THERSHOLD then
+    if path_len >= WALK_THRESHOLD then
         log_(LEVEL_INFO, log, "Too far away or not found, returning to base")
         Actions.ExecuteAction(42149)
         ZoneTransition()
@@ -359,7 +369,7 @@ function fish_relic(max)
     repeat
         local exp, finished = get_relic_exp(max)
         local ready = true
-        for t, need in ipairs(exp) do
+        for t, need in pairs(exp) do
             if need > 0 then
                 ready = false
                 log_(LEVEL_INFO, log, "Need", need, "type", t, "research")

@@ -1,0 +1,69 @@
+name: Flatten Lua Scripts
+
+on:
+  push:
+    paths:
+      - '*.lua'
+      - 'metadata/*.meta'
+      - 'tails/*.lua'
+  pull_request:
+    paths:
+      - '*.lua'
+      - 'metadata/*.meta'
+      - 'tails/*.lua'
+
+jobs:
+  detect-files:
+    runs-on: ubuntu-latest
+    outputs:
+      files: ${{ steps.set-matrix.outputs.files }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: set-matrix
+        run: |
+          files=$(ls metadata/*.meta | sed 's|metadata/\(.*\)\.meta|\1|' | jq -R . | jq -s .)
+          echo "files=$files" >> $GITHUB_OUTPUT
+
+  flatten:
+    needs: detect-files
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        file: ${{ fromJson(needs.detect-files.outputs.files) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Get changed files
+        id: changed
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            ${{ matrix.file }}.lua
+            metadata/${{ matrix.file }}.meta
+            tails/${{ matrix.file }}.lua
+
+      - name: Clone target repo
+        if: steps.changed.outputs.any_changed == 'true'
+        run: |
+          git clone https://x-access-token:${{ secrets.FLAT_SND_TOKEN }}@github.com/Erisen8974/flat_SND_scripts.git target-repo
+
+      - name: Run exporter.py if relevant files changed
+        if: steps.changed.outputs.any_changed == 'true'
+        run: |
+          python exporter.py ${{ matrix.file }}.lua --output target-repo/${{ matrix.file }}_flat.lua
+
+      - name: Commit and push
+        if: steps.changed.outputs.any_changed == 'true'
+        run: |
+          cd target-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Update ${{ matrix.file }}_flat.lua [auto]" || echo "No changes to commit"
+          git push

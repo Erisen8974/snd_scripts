@@ -19,7 +19,7 @@ end
 function pause_pyes()
     pyes_pause_count = default(pyes_pause_count, 0)
     pyes_pause_count = pyes_pause_count + 1
-    IPC.YesAlready.SetPluginEnabled(false)
+    get_shared_data("YesAlready.StopRequests", "System.Collections.Generic.HashSet`1[System.String]"):Add("EriSND")
 end
 
 function resume_pyes()
@@ -28,7 +28,9 @@ function resume_pyes()
     end
     pyes_pause_count = pyes_pause_count - 1
     if pyes_pause_count == 0 then
-        --IPC.YesAlready.SetPluginEnabled(true)
+        get_shared_data("YesAlready.StopRequests", "System.Collections.Generic.HashSet`1[System.String]"):Remove(
+            "EriSND")
+        release_shared_data("YesAlready.StopRequests")
     end
 end
 
@@ -387,7 +389,7 @@ function require_plugins(plugins)
         return
     end
     for p in luanet.each(Svc.PluginInterface.InstalledPlugins) do
-        for i, v in ipairs(plugins) do
+        for i, v in pairs(plugins) do
             if p.IsLoaded and p.InternalName == v then
                 table.remove(plugins, i)
                 if #plugins == 0 then

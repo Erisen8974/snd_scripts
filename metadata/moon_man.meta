@@ -1,0 +1,19 @@
+--[=====[
+[[SND Metadata]]
+author: Erisen
+version: 1.0.0
+description: >-
+  Moon Manager
+
+
+  Control ICE through the fancy new IPCs!
+plugin_dependencies:
+- ICE
+- vnavmesh
+- AutoHook
+plugins_to_disable:
+- TextAdvance
+- YesAlready
+
+[[End Metadata]]
+--]=====]

@@ -101,7 +101,7 @@ function get_item_info(item_name)
 end
 
 function get_item_info_by_id(item_id)
-    for _, item_info in ipairs(item_info_list) do
+    for _, item_info in pairs(item_info_list) do
         if item_info.itemId == item_id then
             return item_info
         end
@@ -154,7 +154,7 @@ function equip_classjob(classjob_abrev, update_after)
 end
 
 function move_to_inventory(item)
-    for _, destination in ipairs(ALL_INVENTORIES) do
+    for _, destination in pairs(ALL_INVENTORIES) do
         if Inventory.GetInventoryContainer(destination).FreeSlots > 0 then
             item:MoveItemSlot(destination)
             return true
