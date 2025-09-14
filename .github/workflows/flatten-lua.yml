@@ -23,7 +23,7 @@ jobs:
       - id: set-matrix
         run: |
           files=$(ls metadata/*.meta | sed 's|metadata/\(.*\)\.meta|\1|' | jq -R . | jq -s .)
-          echo "files=$files" >> $GITHUB_OUTPUT
+          echo "files=${files}" >> $GITHUB_OUTPUT
 
   flatten:
     needs: detect-files
