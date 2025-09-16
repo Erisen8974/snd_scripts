@@ -20,7 +20,7 @@ function require_ipc(ipc_signature, result_type, arg_types)
         end
         arg_types[i] = Type.GetType(v)
     end
-    local method = get_generic_method(Svc.PluginInterface, 'GetIpcSubscriber', arg_types)
+    local method = get_generic_method(Svc.PluginInterface:GetType(), 'GetIpcSubscriber', arg_types)
     if method.Invoke == nil then
         StopScript("GetIpcSubscriber not found", CallerName(false), "No IPC subscriber for", #arg_types, "arguments")
     end
@@ -63,7 +63,7 @@ function get_shared_data(tag, data_type)
     if shared_data_cache[tag] ~= nil then
         return shared_data_cache[tag]
     end
-    local method = get_generic_method(Svc.PluginInterface, 'GetData', { Type.GetType(data_type) })
+    local method = get_generic_method(Svc.PluginInterface:GetType(), 'GetData', { Type.GetType(data_type) })
     local sig = luanet.make_array(Object, { tag })
     local so = method:Invoke(Svc.PluginInterface, sig)
     if so == sig then

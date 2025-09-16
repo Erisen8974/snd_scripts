@@ -41,20 +41,36 @@ function make_set(content_type, ...)
     return l
 end
 
+function deref_pointer(ptr, ctype)
+    if Unsafe == nil then
+        _, Unsafe = load_type("System.Runtime.CompilerServices.Unsafe", "System.Runtime")
+    end
+    local AsRef = get_generic_method(Unsafe, "AsRef", { ctype })
+    if AsRef == nil or AsRef.Invoke == nil then
+        StopScript("Failed to get AsRef method", CallerName(false), "ctype:", ctype)
+    end
+    local arg = luanet.make_array(Object, { ptr })
+    local ref = AsRef:Invoke(nil, arg)
+    if ref == arg then
+        StopScript("Failed to deref pointer", CallerName(false), "pointer:", ptr, "ctype:", ctype)
+    end
+    return ref
+end
+
 function assembly_name(inputstr)
     for str in string.gmatch(inputstr, "[^%.]+") do
         return str
     end
 end
 
-function load_type(type_path)
-    local assembly = assembly_name(type_path)
+function load_type(type_path, assembly)
+    assembly = default(assembly, assembly_name(type_path))
     log_(LEVEL_VERBOSE, log, "Loading assembly", assembly)
     luanet.load_assembly(assembly)
     log_(LEVEL_VERBOSE, log, "Wrapping type", type_path)
     local type_var = luanet.import_type(type_path)
     log_(LEVEL_VERBOSE, log, "Wrapped type", type_var)
-    return type_var
+    return type_var, luanet.ctype(type_var)
 end
 
 function get_method(type, method_name, binding)
@@ -116,7 +132,11 @@ function dump_type_info(type, show_what, object)
         local meth = type:GetMethods(binding_flags)
         log(meth.Length, "Methods")
         for i = 0, meth.Length - 1, 1 do
-            log(tostring(i) .. ':', meth[i].Name)
+            local extra = ""
+            if meth[i].IsGenericMethodDefinition then
+                extra = "<" .. tostring(meth[i]:GetGenericArguments().Length) .. ">"
+            end
+            log(tostring(i) .. ':', meth[i].Name .. extra)
         end
     end
 
@@ -199,13 +219,7 @@ end
 --- ########################
 --- ####### Generics #######
 --- ########################
-function get_generic_method(object, method_name, genericTypes)
-    local targetType
-    if object.GetType then
-        targetType = object:GetType()
-    else
-        targetType = object
-    end
+function get_generic_method(targetType, method_name, genericTypes)
     local genericArgsArr = luanet.make_array(Type, genericTypes)
     local methods = targetType:GetMethods()
     for i = 0, methods.Length - 1 do
