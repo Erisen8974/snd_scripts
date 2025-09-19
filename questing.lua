@@ -1,4 +1,5 @@
 require 'utils'
+require 'luasharp'
 require 'path_helpers'
 require 'inventory_buddy'
 
@@ -58,6 +59,13 @@ function GetBeastTribeQuest(npc, class, path, one_per, n)
             RunQuesty()
         end
     end
+end
+
+function get_allowances()
+    local QuestManager, QuestManager_ty = load_type("FFXIVClientStructs.FFXIV.Client.Game.QuestManager")
+
+    local instance = QuestManager.Instance()
+    return deref_pointer(instance, QuestManager_ty):GetBeastTribeAllowance()
 end
 
 function RunQuesty(max_time)

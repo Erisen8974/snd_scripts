@@ -74,7 +74,7 @@ function get_wt()
     until IsAddonReady("Talk") or IsAddonReady("SelectString")
 
     while wait_any_addons("SelectString", "Talk") == "Talk" do
-        close_talk()
+        close_talk("SelectString")
         wait(0.1)
     end
 
