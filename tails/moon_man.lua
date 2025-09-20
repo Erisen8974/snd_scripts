@@ -23,6 +23,8 @@ function run_current_job()
     else
         log_(LEVEL_ERROR, log, "Invalid job", current_job.Name, "only gatherers are supported") -- update message when crafters are supported
     end
+
+    log_(LEVEL_INFO, log, "Finished auto relic on job", current_job.Name, "(" .. current_job.Abbreviation .. ")")
 end
 
 if JOBS_LIST.Count == 0 then
@@ -33,5 +35,3 @@ else
         run_current_job()
     end
 end
-
-log_(LEVEL_INFO, log, "Finished auto relic on job", current_job.Name, "(" .. current_job.Abbreviation .. ")")
