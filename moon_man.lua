@@ -367,7 +367,7 @@ function get_relic_exp(max)
     return exp_needed, completed
 end
 
-function get_cosmo_credits()
+function get_lunar_credits()
     local addon = Addons.GetAddon("WKSHud")
     if not addon.Exists or not addon.Ready then
         StopScript("No WKS Hud", CallerName(false), "Failed to get the HUD")
@@ -377,10 +377,14 @@ function get_cosmo_credits()
 end
 
 function do_upkeep()
-    if GAMBA_TIME > 0 and get_cosmo_credits() >= GAMBA_TIME then
+    log_(LEVEL_DEBUG, log, "Doing upkeep")
+    log_(LEVEL_DEBUG, log, "GAMBA_TIME:", GAMBA_TIME, "PROCESS_RETAINERS:", PROCESS_RETAINERS)
+    if GAMBA_TIME > 0 and get_lunar_credits() >= GAMBA_TIME then
+        log_(LEVEL_DEBUG, log, "Starting gamba")
         start_gamba()
     end
     if PROCESS_RETAINERS and IPC.AutoRetainer.AreAnyRetainersAvailableForCurrentChara() then
+        log_(LEVEL_DEBUG, log, "Processing retainers")
         moon_talk("Summoning Bell")
         repeat
             wait(1)
@@ -391,6 +395,8 @@ function do_upkeep()
 end
 
 function fish_relic(max)
+    log_(LEVEL_DEBUG, log, "Fish relic, Gamba limit:", GAMBA_TIME, "Max research:", max, "Handle retainers:",
+        PROCESS_RETAINERS)
     repeat
         do_upkeep()
         local exp, finished = get_relic_exp(max)
@@ -416,6 +422,8 @@ function fish_relic(max)
 end
 
 function gather_relic(max)
+    log_(LEVEL_DEBUG, log, "Gather relic, Gamba limit:", GAMBA_TIME, "Max research:", max, "Handle retainers:",
+        PROCESS_RETAINERS)
     repeat
         local finished, ready, exp = false, false, nil
         if ice_is_running() then
