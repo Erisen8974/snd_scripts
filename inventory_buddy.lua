@@ -139,6 +139,7 @@ function equip_classjob(classjob_abrev, update_after)
             log_(LEVEL_INFO, log, "Equipping gearset", gearset_name, "for class/job", classjob_abrev)
             repeat
                 CheckTimeout(10, ti, CallerName(false), "Couldnt equip gearset:", gearset_name)
+                gs:Equip()
                 wait(0.3)
                 yesno = Addons.GetAddon("SelectYesno")
                 wait(0.3)
