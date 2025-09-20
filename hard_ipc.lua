@@ -9,7 +9,7 @@ shared_data_cache = {}
 
 function require_ipc(ipc_signature, result_type, arg_types)
     if ipc_cache_actions[ipc_signature] ~= nil or ipc_cache_functions[ipc_signature] ~= nil then
-        log_(LEVEL_DEBUG, log, "IPC already loaded", ipc_signature)
+        log_(LEVEL_VERBOSE, log, "IPC already loaded", ipc_signature)
         return
     end
     arg_types = default(arg_types, {})

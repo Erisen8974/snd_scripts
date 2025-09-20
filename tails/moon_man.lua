@@ -1,5 +1,5 @@
-local GAMBA_TIME = Config.Get("GambaLimit")
-local PROCESS_RETAINERS = Config.Get("HandleRetainers")
+GAMBA_TIME = Config.Get("GambaLimit")
+PROCESS_RETAINERS = Config.Get("HandleRetainers")
 local MAX_RESEARCH = Config.Get("MaxResearch")
 
 if Config.Get("DebugMessages") then
