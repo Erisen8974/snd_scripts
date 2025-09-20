@@ -15,6 +15,8 @@ local WALK_THRESHOLD = 100
 local RETURN_TO_SPOT = true
 local RETURN_RADIUS = 3
 local start_spot = Player.Entity.Position
+local GAMBA_TIME = 8000
+local PROCESS_RETAINERS = true
 
 
 function ice_only_mission(s)
@@ -140,7 +142,7 @@ function moon_talk(who)
     local e = get_closest_entity(who, true)
     e:SetAsTarget()
     e:Interact()
-    close_talk("SelectString", "SelectIconString")
+    close_talk("SelectString", "SelectIconString", "RetainerList")
 end
 
 function report_research(class)
@@ -365,8 +367,32 @@ function get_relic_exp(max)
     return exp_needed, completed
 end
 
+function get_cosmo_credits()
+    local addon = Addons.GetAddon("WKSHud")
+    if not addon.Exists or not addon.Ready then
+        StopScript("No WKS Hud", CallerName(false), "Failed to get the HUD")
+    end
+
+    return tonumber(addon:GetAtkValue(6).ValueString)
+end
+
+function do_upkeep()
+    if GAMBA_TIME > 0 and get_cosmo_credits() >= GAMBA_TIME then
+        start_gamba()
+    end
+    if PROCESS_RETAINERS and IPC.AutoRetainer.AreAnyRetainersAvailableForCurrentChara() then
+        moon_talk("Summoning Bell")
+        repeat
+            wait(1)
+        until not IPC.AutoRetainer.IsBusy()
+        close_addon("RetainerList")
+        close_talk()
+    end
+end
+
 function fish_relic(max)
     repeat
+        do_upkeep()
         local exp, finished = get_relic_exp(max)
         local ready = true
         for t, need in pairs(exp) do
@@ -385,6 +411,37 @@ function fish_relic(max)
         end
         if ready and not finished then
             report_research_safe()
+        end
+    until finished and ready
+end
+
+function gather_relic(max)
+    repeat
+        local finished, ready, exp = false, false, nil
+        if ice_is_running() then
+            wait(1)
+        else
+            do_upkeep()
+            exp, finished = get_relic_exp(max)
+            ready = true
+            for t, need in pairs(exp) do
+                if need > 0 then
+                    ready = false
+                    log_(LEVEL_INFO, log, "Need", need, "type", t, "research")
+
+                    ice_setting("OnlyGrabMission", false)
+                    ice_setting("StopAfterCurrent", true)
+                    ice_setting("XPRelicGrind", true)
+                    ice_setting("StopOnceHitCosmoCredits", false)
+                    ice_setting("StopOnceHitLunarCredits", false)
+
+                    start_ice_once()
+                    break
+                end
+            end
+            if ready and not finished then
+                report_research_safe()
+            end
         end
     until finished and ready
 end

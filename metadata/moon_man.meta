@@ -19,7 +19,13 @@ configs:
   MaxResearch:
     default: false
     description: Get research to cap instead of just target
-    type: bool
-    required: false
+  HandleRetainers:
+    default: true
+    description: Interact with summoning bell when AR is ready.
+  GambaLimit:
+    default: 8000
+    description: Cosmo Credits to start start spinning the wheel. Must configure ICE to do gamba! 0 to disable.
+    min: 0
+    max: 10000
 [[End Metadata]]
 --]=====]

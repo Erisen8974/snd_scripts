@@ -74,7 +74,7 @@ function walk_path(path, fly, range, stop_if_stuck)
     local pos = path[path.Count - 1]
     local ti = ResetTimeout()
     IPC.vnavmesh.MoveTo(path, fly)
-    if not GetCharacterCondition(4) and path_length(path) > 40 then
+    if not GetCharacterCondition(4) and path_length(path) > 30 then
         Actions.ExecuteGeneralAction(9)
     end
     local last_pos

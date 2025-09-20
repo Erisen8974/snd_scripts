@@ -128,7 +128,7 @@ function close_talk(first, ...)
     local ti = ResetTimeout()
     while (first ~= nil and not any_addons_ready(first, ...)) or (first == nil and GetCharacterCondition(32)) do
         yield("/click Talk Click")
-        CheckTimeout(10, ti, CallerName(false), "Finishing talking")
+        CheckTimeout(60, ti, CallerName(false), "Finishing talking")
         wait(.1)
     end
 end
