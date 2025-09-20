@@ -76,12 +76,12 @@ end
 function release_shared_data(tag)
     if tag == nil then
         for t, _ in pairs(shared_data_cache) do
-            log_(LEVEL_DEBUG, log, "Releasing shared data", t)
+            log_(LEVEL_VERBOSE, log, "Releasing shared data", t)
             Svc.PluginInterface:RelinquishData(t)
         end
         shared_data_cache = {}
     else
-        log_(LEVEL_DEBUG, log, "Releasing shared data", tag)
+        log_(LEVEL_VERBOSE, log, "Releasing shared data", tag)
         Svc.PluginInterface:RelinquishData(tag)
         shared_data_cache[tag] = nil
     end
