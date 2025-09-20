@@ -29,7 +29,7 @@ if JOBS_LIST.Count == 0 then
     run_current_job()
 else
     for job in luanet.each(JOBS_LIST) do
-        equip_classjob(job, true)
+        equip_classjob(job)
         run_current_job()
     end
 end

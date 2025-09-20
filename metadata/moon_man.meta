@@ -29,9 +29,9 @@ configs:
     max: 10000
 
   RelicJobs:
-    description: Jobs to cycle through completing the relic. Dont add any to only run on current job.
+    description: Jobs abbreviations to cycle through completing the relic. Dont add any to only run on current job.
     is_choice: false
-    choices: []
+    choices: ["FSH", "BTN", "MIN"]
 
   DebugMessages:
     default: false
