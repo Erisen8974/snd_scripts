@@ -2,6 +2,9 @@ require 'utils'
 require 'path_helpers'
 require 'inventory_buddy'
 
+local fixed_members = "Graha Yshtola" -- allrounder + DPS
+local support_fill = "Krile"          -- if youre support add another DPS Graha fills the other support role
+local dps_fill = "Thancred"           -- if youre dps add tank and Graha fills healer
 
 local duty_blacklist = {}
 function reset_blacklist()
@@ -120,20 +123,6 @@ function run_content(type, unsync, instance_id)
     setup_content(type, unsync)
     local count = wt_count()
     IPC.AutoDuty.Run(instance_id, 1, false)
-    local t = os.clock()
-    local delay = 3
-    repeat
-        wait(.1)
-        if os.clock() - t > delay then
-            t = os.clock()
-            delay = 15
-            if type == "Dungeons" and not unsync then
-                -- try to reset trust mode
-                log("Stuck? Resetting trust select")
-                SafeCallback("Dawn", true, -1)
-            end
-        end
-    until Svc.ClientState.TerritoryType == instance_id
     repeat
         wait(1)
     until IPC.AutoDuty.IsStopped()
@@ -153,6 +142,14 @@ function setup_content(type, unsync)
         IPC.AutoDuty.SetConfig("Unsynced", "True")
     elseif type == "Dungeons" and not unsync then
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Trust")
+        local members = fixed_members .. ' '
+        if Player.Job.IsDPS then
+            members = members .. dps_fill
+        else
+            members = members .. support_fill
+        end
+        log_(LEVEL_INFO, log, "Setting trust members to", members)
+        Engines.Native.Run("/ad cfg SelectedTrustMembers set " .. members)
     elseif type == "Raids" then
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Raid")
         IPC.AutoDuty.SetConfig("Unsynced", "True")
