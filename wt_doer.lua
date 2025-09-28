@@ -2,9 +2,9 @@ require 'utils'
 require 'path_helpers'
 require 'inventory_buddy'
 
-local fixed_members = "Graha Yshtola" -- allrounder + DPS
-local support_fill = "Krile"          -- if youre support add another DPS Graha fills the other support role
-local dps_fill = "Thancred"           -- if youre dps add tank and Graha fills healer
+local fixed_members = { "Graha", "Yshtola" } -- allrounder + DPS
+local support_fill = "Krile"                 -- if youre support add another DPS Graha fills the other support role
+local dps_fill = "Thancred"                  -- if youre dps add tank and Graha fills healer
 
 local duty_blacklist = {}
 function reset_blacklist()
@@ -142,14 +142,18 @@ function setup_content(type, unsync)
         IPC.AutoDuty.SetConfig("Unsynced", "True")
     elseif type == "Dungeons" and not unsync then
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Trust")
-        local members = fixed_members .. ' '
+        local command = String[4]
+        command[0] = "set"
+        command[1] = fixed_members[1]
+        command[2] = fixed_members[2]
         if Player.Job.IsDPS then
-            members = members .. dps_fill
+            command[3] = dps_fill
         else
-            members = members .. support_fill
+            command[3] = support_fill
         end
-        log_(LEVEL_INFO, log, "Setting trust members to", members)
-        Engines.Native.Run("/ad cfg SelectedTrustMembers set " .. members)
+        log_(LEVEL_INFO, log, "Setting trust members to")
+        log_(LEVEL_INFO, log_array, command)
+        IPC.AutoDuty.SetConfig("SelectedTrustMembers", command)
     elseif type == "Raids" then
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Raid")
         IPC.AutoDuty.SetConfig("Unsynced", "True")
