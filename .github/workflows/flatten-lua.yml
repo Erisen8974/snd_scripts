@@ -15,12 +15,12 @@ on:
     paths:
       - '*.lua'
       - 'metadata/*.meta'
-      - 'tails/*.lua'
+      - 'metadata/*.lua'
   pull_request:
     paths:
       - '*.lua'
       - 'metadata/*.meta'
-      - 'tails/*.lua'
+      - 'metadata/*.lua'
 
 jobs:
   detect-files:
@@ -54,9 +54,8 @@ jobs:
         uses: tj-actions/changed-files@v44
         with:
           files: |
-            ${{ matrix.file }}.lua
             metadata/${{ matrix.file }}.meta
-            tails/${{ matrix.file }}.lua
+            metadata/${{ matrix.file }}.lua
 
       - name: Determine if this file should be forced
         id: should_run
@@ -78,20 +77,35 @@ jobs:
           fi
           echo "should_run=$should_run" >> $GITHUB_OUTPUT
 
-      - name: Clone target repo
-        if: steps.changed.outputs.any_changed == 'true' || steps.should_run.outputs.should_run == 'true'
+      - name: Clone target repo for sources
         run: |
-          git clone https://x-access-token:${{ secrets.FLAT_SND_TOKEN }}@github.com/Erisen8974/flat_SND_scripts.git target-repo
+          git clone --depth 1 https://x-access-token:${{ secrets.FLAT_SND_TOKEN }}@github.com/Erisen8974/flat_SND_scripts.git flat_snd_scripts
 
-      - name: Run exporter.py if relevant files changed
-        if: steps.changed.outputs.any_changed == 'true' || steps.should_run.outputs.should_run == 'true'
+      - name: Check if any dependency in sources file changed
+        id: sources_changed
         run: |
-          python exporter.py ${{ matrix.file }}.lua --output target-repo/${{ matrix.file }}_flat.lua
+          file="${{ matrix.file }}"
+          sources_file="flat_snd_scripts/${file}_flat.lua.sources"
+          should_run="false"
+          if [[ -f "$sources_file" ]]; then
+            while IFS= read -r dep; do
+              if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -Fxq "$dep"; then
+                should_run="true"
+                break
+              fi
+            done < "$sources_file"
+          fi
+          echo "should_run=$should_run" >> $GITHUB_OUTPUT
+
+      - name: Run exporter.py if relevant files changed or dependency changed
+        if: steps.changed.outputs.any_changed == 'true' || steps.should_run.outputs.should_run == 'true' || steps.sources_changed.outputs.should_run == 'true'
+        run: |
+          python exporter.py metadata/${{ matrix.file }}.lua --output flat_snd_scripts/${{ matrix.file }}_flat.lua
 
       - name: Commit and push
-        if: steps.changed.outputs.any_changed == 'true' || steps.should_run.outputs.should_run == 'true'
+        if: steps.changed.outputs.any_changed == 'true' || steps.should_run.outputs.should_run == 'true' || steps.sources_changed.outputs.should_run == 'true'
         run: |
-          cd target-repo
+          cd flat_snd_scripts
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .

@@ -26,6 +26,9 @@ def process_lua_file(file_path, search_paths, included_files, output_lines):
         output_lines.append(f"-- Skipped import: {rel_file_path}")
         return  # Prevent duplicate inclusion
     included_files.add(file_path)
+    # Track imported files for .sources output
+    if hasattr(process_lua_file, 'sources'):
+        process_lua_file.sources.append(rel_file_path)
     with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
             # Match require with or without parentheses
@@ -67,10 +70,10 @@ def process_lua_file(file_path, search_paths, included_files, output_lines):
                 output_lines.append(line.rstrip('\n'))
 
 def main():
+
     parser = argparse.ArgumentParser(description="Flatten Lua scripts by resolving require statements.")
     parser.add_argument('base_script', help='Path to base Lua script')
-    parser.add_argument('--config_header', help='Path to configuration header file (optional if .meta file exists)')
-    parser.add_argument('--footer', help='Path to footer Lua file (optional if tails/<basename>.lua exists)')
+    parser.add_argument('--config-header', help='Path to configuration header file (optional if .meta file exists)')
     parser.add_argument('--search-paths', nargs='*', default=['.'], help='List of directories to search for required modules')
     parser.add_argument('--output', default='flattened.lua', help='Output file name')
     args = parser.parse_args()
@@ -81,24 +84,12 @@ def main():
         base_script_abs = os.path.abspath(args.base_script)
         base_dir = os.path.dirname(base_script_abs)
         base_name = os.path.splitext(os.path.basename(base_script_abs))[0]
-        meta_path = os.path.join(base_dir, 'metadata', base_name + '.meta')
+        meta_path = os.path.join(base_dir, base_name + '.meta')
         if os.path.isfile(meta_path):
             config_header_path = meta_path
         else:
             print("Error: No config_header provided and no .meta file found in metadata folder.", file=sys.stderr)
             sys.exit(1)
-
-    # Determine footer path
-    footer_path = args.footer
-    if not footer_path:
-        base_script_abs = os.path.abspath(args.base_script)
-        base_dir = os.path.dirname(base_script_abs)
-        base_name = os.path.splitext(os.path.basename(base_script_abs))[0]
-        tails_path = os.path.join(base_dir, 'tails', base_name + '.lua')
-        if os.path.isfile(tails_path):
-            footer_path = tails_path
-        else:
-            footer_path = None  # No footer
 
     # Read configuration header
     with open(config_header_path, 'r', encoding='utf-8') as f:
@@ -111,19 +102,22 @@ def main():
     output_lines.append('-- Auto generated file, do not edit!')
     output_lines.extend(config_header.splitlines())
 
+    # Prepare to track sources
+    process_lua_file.sources = []
+
     # Process base script and its dependencies
     process_lua_file(os.path.abspath(args.base_script), [os.path.abspath(p) for p in args.search_paths], included_files, output_lines)
-
-    # Add footer if present
-    if footer_path:
-        with open(footer_path, 'r', encoding='utf-8') as f:
-            for line in f:
-                output_lines.append(line.rstrip('\n'))
 
     # Write to output file
     with open(args.output, 'w', encoding='utf-8') as f:
         for line in output_lines:
             f.write(line + '\n')
+
+    # Write sources file
+    sources_filename = args.output + '.sources'
+    with open(sources_filename, 'w', encoding='utf-8') as f:
+        for src in process_lua_file.sources:
+            f.write(src + '\n')
 
 if __name__ == '__main__':
     main()

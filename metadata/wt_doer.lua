@@ -1,3 +1,5 @@
+require "wt_doer"
+
 local GEARSET = Config.Get("GearsetName")
 
 if Config.Get("DebugMessages") then

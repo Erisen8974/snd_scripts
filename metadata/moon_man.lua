@@ -1,3 +1,5 @@
+require "moon_man"
+
 GAMBA_TIME = Config.Get("GambaLimit")
 PROCESS_RETAINERS = Config.Get("HandleRetainers")
 local MAX_RESEARCH = Config.Get("MaxResearch")
