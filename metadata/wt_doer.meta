@@ -1,0 +1,26 @@
+--[=====[
+[[SND Metadata]]
+author: Erisen
+version: 1.0.0
+description: >-
+  Wondrous Tails Manager
+
+
+  Uses Auto Duty to run duties relevant to your weekly bingo
+plugin_dependencies:
+- vnavmesh
+- AutoDuty
+- visland
+plugins_to_disable:
+- TextAdvance
+- YesAlready
+configs:
+  GearsetName:
+    description: Gearset name to use for duties. Leave blank to use current gear.
+  DebugMessages:
+    default: false
+    description: Show debug logs
+    type: bool
+
+[[End Metadata]]
+--]=====]

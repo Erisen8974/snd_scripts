@@ -154,10 +154,10 @@ function setup_content(type, unsync)
         log_(LEVEL_INFO, log, "Setting trust members to")
         log_(LEVEL_INFO, log_array, command)
         IPC.AutoDuty.SetConfig("SelectedTrustMembers", command)
-    elseif type == "Raids" then
+    elseif type == "Raids" and unsync then
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Raid")
         IPC.AutoDuty.SetConfig("Unsynced", "True")
-    elseif type == "Trials" then
+    elseif type == "Trials" and unsync then
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Trial")
         IPC.AutoDuty.SetConfig("Unsynced", "True")
     else
