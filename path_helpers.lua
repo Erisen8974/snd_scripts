@@ -38,20 +38,36 @@ function TownPath(town, x, y, z, shard, dest_town, ...)
     WalkTo(x, y, z)
 end
 
+local aether_info = nil
+function load_aether_info()
+    if aether_info == nil then
+        local t = os.clock()
+        aether_info = {}
+        local sheet = Excel.GetSheet("Aetheryte")
+        for r = 0, sheet.Count - 1 do
+            if os.clock() - t > 1.0 / 20.0 then
+                wait(0)
+                t = os.clock()
+            end
+            local row = sheet[r]
+            if row.IsAetheryte then
+                aether_info[row.RowId] = {
+                    Name = row.PlaceName.Name,
+                    TerritoryId = row.Territory.RowId,
+                    Position = Instances.Telepo:GetAetherytePosition(r)
+                }
+            end
+        end
+    end
+    return aether_info
+end
+
 function nearest_aetherite(territory_id, goal_point)
     local closest = nil
     local distance = nil
-    t = os.clock()
-    local sheet = Excel.GetSheet("Aetheryte")
-    for r = 0, sheet.Count - 1 do
-        if os.clock() - t > 1.0 / 20.0 then
-            wait(0)
-            t = os.clock()
-        end
-        local row = sheet[r]
-        local ter = row.Territory
-        if row.IsAetheryte and ter ~= nil and ter.RowId == territory_id then
-            local d = Vector3.Distance(goal_point, Instances.Telepo:GetAetherytePosition(r))
+    for _, row in pairs(load_aether_info()) do
+        if row.TerritoryId == territory_id then
+            local d = Vector3.Distance(goal_point, row.Position)
             if closest == nil or d < distance then
                 closest = row
                 distance = d

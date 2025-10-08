@@ -83,7 +83,7 @@ function GetBeastTribeQuest(class, path, one_per, n)
                     StopScript("NoAetheryte", CallerName(false), "No aetherite found for", path.TerritoryId)
                 end
                 repeat
-                    yield("/tp " .. a.PlaceName.Name)
+                    yield("/tp " .. a.Name)
                     wait(1)
                 until Player.Entity.IsCasting
                 ZoneTransition()
