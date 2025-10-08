@@ -16,7 +16,7 @@ local required_plugins = {
 
 local quest_npcs = {
     YokHuy = { Position = Vector3(493.2173, 142.24991, 783.0471), TerritoryId = 1187, Name = "Vuyargur" },
-    PeluPelu = { Position = Vector3(770.7179, 12.84657, -263.99634), TerritoryId = 1188, Name = "Yubli" },
+    PeluPelu = { Position = Vector3(771.2979, 12.946572, -259.09082), TerritoryId = 1188, Name = "Yubli" },
     MamoolJa = { Position = Vector3(589.3186, -142.89168, 729.4575), TerritoryId = 1189, Name = "Kageel Ja" },
 }
 
@@ -78,7 +78,7 @@ function GetBeastTribeQuest(class, path, one_per, n)
     for i = 1, n do
         if not IsNearThing(path.Name, 4) then
             if Svc.ClientState.TerritoryType ~= path.TerritoryId then
-                local a = nearest_aetherite(1187, path.Position)
+                local a = nearest_aetherite(path.TerritoryId, path.Position)
                 if a == nil then
                     StopScript("NoAetheryte", CallerName(false), "No aetherite found for", path.TerritoryId)
                 end

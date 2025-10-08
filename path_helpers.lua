@@ -114,7 +114,7 @@ function walk_path(path, fly, range, stop_if_stuck)
     local pos = path[path.Count - 1]
     local ti = ResetTimeout()
     IPC.vnavmesh.MoveTo(path, fly)
-    if not GetCharacterCondition(4) and path_length(path) > 30 then
+    if not GetCharacterCondition(4) and (fly or path_length(path) > 30) then
         Actions.ExecuteGeneralAction(9)
     end
     local last_pos
@@ -124,11 +124,13 @@ function walk_path(path, fly, range, stop_if_stuck)
         if range ~= nil and Vector3.Distance(Entity.Player.Position, pos) <= range then
             IPC.vnavmesh.Stop()
         end
-        if stop_if_stuck and Vector3.Distance(last_pos, cur_pos) < stop_if_stuck and (not fly or GetCharacterCondition(4)) then
-            log_(LEVEL_ERROR, log, "Antistuck triggered!")
-            IPC.vnavmesh.Stop()
+        if not fly or GetCharacterCondition(4) then
+            if stop_if_stuck and Vector3.Distance(last_pos, cur_pos) < stop_if_stuck then
+                log_(LEVEL_ERROR, log, "Antistuck triggered!")
+                IPC.vnavmesh.Stop()
+            end
+            last_pos = cur_pos
         end
-        last_pos = cur_pos
         wait(0.1)
     end
 end
@@ -141,9 +143,10 @@ function land_and_dismount()
         local floor = IPC.vnavmesh.NearestPoint(Player.Entity.Position, 20, 20)
         IPC.vnavmesh.PathfindAndMoveTo(floor, true)
         local t = os.clock()
-        while (IPC.vnavmesh.IsRunning() or IPC.vnavmesh.PathfindInProgress()) and os.clock() - t < 5 do
+        while (IPC.vnavmesh.IsRunning() or IPC.vnavmesh.PathfindInProgress()) and os.clock() - t < 2 do
             wait(.1)
         end
+        IPC.vnavmesh.Stop()
     end
     while GetCharacterCondition(4) do
         Actions.ExecuteGeneralAction(23)
