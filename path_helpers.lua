@@ -38,6 +38,30 @@ function TownPath(town, x, y, z, shard, dest_town, ...)
     WalkTo(x, y, z)
 end
 
+function nearest_aetherite(territory_id, goal_point)
+    local closest = nil
+    local distance = nil
+    t = os.clock()
+    local sheet = Excel.GetSheet("Aetheryte")
+    for r = 0, sheet.Count - 1 do
+        if os.clock() - t > 1.0 / 20.0 then
+            wait(0)
+            t = os.clock()
+        end
+        local row = sheet[r]
+        local ter = row.Territory
+        if row.IsAetheryte and ter ~= nil and ter.RowId == territory_id then
+            local d = Vector3.Distance(goal_point, Instances.Telepo:GetAetherytePosition(r))
+            if closest == nil or d < distance then
+                closest = row
+                distance = d
+            end
+        end
+    end
+
+    return closest
+end
+
 function random_real(lower, upper)
     if not default(random_is_seeded, false) then
         random_is_seeded = true
@@ -84,12 +108,30 @@ function walk_path(path, fly, range, stop_if_stuck)
         if range ~= nil and Vector3.Distance(Entity.Player.Position, pos) <= range then
             IPC.vnavmesh.Stop()
         end
-        if stop_if_stuck and Vector3.Distance(last_pos, cur_pos) < stop_if_stuck then
+        if stop_if_stuck and Vector3.Distance(last_pos, cur_pos) < stop_if_stuck and (not fly or GetCharacterCondition(4)) then
             log_(LEVEL_ERROR, log, "Antistuck triggered!")
             IPC.vnavmesh.Stop()
         end
         last_pos = cur_pos
         wait(0.1)
+    end
+end
+
+function land_and_dismount()
+    if not GetCharacterCondition(4) then
+        return
+    end
+    if GetCharacterCondition(77) then
+        local floor = IPC.vnavmesh.NearestPoint(Player.Entity.Position, 20, 20)
+        IPC.vnavmesh.PathfindAndMoveTo(floor, true)
+        local t = os.clock()
+        while (IPC.vnavmesh.IsRunning() or IPC.vnavmesh.PathfindInProgress()) and os.clock() - t < 5 do
+            wait(.1)
+        end
+    end
+    while GetCharacterCondition(4) do
+        Actions.ExecuteGeneralAction(23)
+        wait(.1)
     end
 end
 
