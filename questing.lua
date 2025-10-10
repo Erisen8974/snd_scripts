@@ -3,9 +3,9 @@ require 'luasharp'
 require 'path_helpers'
 require 'inventory_buddy'
 
-local DEFAULT_COMBAT = "Viper"
-local DEFAULT_GATHER = "Botanist"
-local DEFAULT_CRAFT = "Culinarian"
+DEFAULT_COMBAT = "Viper"
+DEFAULT_GATHER = "Botanist"
+DEFAULT_CRAFT = "Culinarian"
 
 local required_plugins = {
     "Questionable",
@@ -14,9 +14,12 @@ local required_plugins = {
     "visland",
 }
 
-local quest_npcs = {
+
+
+
+quest_npcs = {
     YokHuy = { Position = Vector3(493.2173, 142.24991, 783.0471), TerritoryId = 1187, Name = "Vuyargur" },
-    PeluPelu = { Position = Vector3(771.2979, 12.946572, -259.09082), TerritoryId = 1188, Name = "Yubli" },
+    PeluPelu = { Position = Vector3(770.8533, 12.846572, -259.50546), TerritoryId = 1188, Name = "Yubli", PathRange = 2, InteractRange = 7 },
     MamoolJa = { Position = Vector3(589.3186, -142.89168, 729.4575), TerritoryId = 1189, Name = "Kageel Ja" },
 }
 
@@ -68,29 +71,36 @@ function GetBeastTribeQuestOld(npc, class, path, one_per, n)
     end
 end
 
+function move_to_quest_giver(path)
+    local interact_range = default(path.InteractRange, 4)
+    local path_range = default(path.PathRange, interact_range)
+    if IsNearThing(path.Name, interact_range) then
+        return
+    end
+    if Svc.ClientState.TerritoryType ~= path.TerritoryId then
+        local a = nearest_aetherite(path.TerritoryId, path.Position)
+        if a == nil then
+            StopScript("NoAetheryte", CallerName(false), "No aetherite found for", path.TerritoryId)
+        end
+        repeat
+            yield("/tp " .. a.Name)
+            wait(1)
+        until Player.Entity.IsCasting
+        ZoneTransition()
+    end
+    move_near_point(path.Position, path_range, true)
+    land_and_dismount()
+end
+
 function GetBeastTribeQuest(class, path, one_per, n)
     require_plugins(required_plugins)
     n = default(n, 3)
     one_per = default(one_per, false)
     yield("/at y")
-    equip_gearset(class)
 
     for i = 1, n do
-        if not IsNearThing(path.Name, 4) then
-            if Svc.ClientState.TerritoryType ~= path.TerritoryId then
-                local a = nearest_aetherite(path.TerritoryId, path.Position)
-                if a == nil then
-                    StopScript("NoAetheryte", CallerName(false), "No aetherite found for", path.TerritoryId)
-                end
-                repeat
-                    yield("/tp " .. a.Name)
-                    wait(1)
-                until Player.Entity.IsCasting
-                ZoneTransition()
-            end
-            move_near_point(path.Position, 4, true)
-            land_and_dismount()
-        end
+        move_to_quest_giver(path)
+        equip_gearset(class)
         AcceptQuest(path.Name)
         if one_per or i == n then
             RunQuesty()

@@ -4,6 +4,9 @@ require 'hard_ipc'
 import "System.Numerics"
 import "System"
 
+local WALK_THRESHOLD = 35
+local FLY_THRESHOLD = 100
+
 function TownPath(town, x, y, z, shard, dest_town, ...)
     local alt_zones = { town, dest_town, ... }
     dest_town = default(dest_town, town)
@@ -89,39 +92,46 @@ end
 function move_near_point(spot, radius, fly)
     fly = default(fly, false)
     local target = Vector3(spot.X + random_real(-radius, radius), spot.Y, spot.Z + random_real(-radius, radius))
-    local result
+    local result, fly_result
+    target.Y = target.Y + 0.5
     if fly then
-        target.Y = target.Y + 0.5 + random_real(0, radius)
-        log_(LEVEL_DEBUG, log, "Looking for mesh point in range", 2 * radius, "of", target)
-        result = IPC.vnavmesh.NearestPoint(target, 2 * radius, radius)
-    else
-        target.Y = target.Y + 0.5
-        log_(LEVEL_DEBUG, log, "Looking for floor point in range", 2 * radius, "of", target)
-        result = IPC.vnavmesh.PointOnFloor(target, false, 2 * radius)
+        log_(LEVEL_DEBUG, log, "Looking for mesh point in range", radius, "of", target)
+        fly_result = IPC.vnavmesh.NearestPoint(target, radius, radius)
     end
-    if result == nil then
+    log_(LEVEL_DEBUG, log, "Looking for floor point in range", radius, "of", target)
+    result = IPC.vnavmesh.PointOnFloor(target, false, radius)
+
+    if result == nil or (fly and fly_result == nil) then
         log_(LEVEL_ERROR, log, "No valid point found in range", radius, "of", spot, "searched from", target)
         return false
     end
-    log_(LEVEL_DEBUG, log, "Found point in area", result)
-    local path = await(IPC.vnavmesh.Pathfind(Player.Entity.Position, target, fly))
-    walk_path(path, fly, nil, 0.01)
+    log_(LEVEL_DEBUG, log, "Found point in area", result, fly_result)
+    local path, fly_path
+    if fly_result == nil or Vector3.Distance(Player.Entity.Position, result) < FLY_THRESHOLD then
+        path = pathfind_with_tolerance(result, false, radius)
+    end
+    if fly_result ~= nil and (path == nil or path_length(path) > FLY_THRESHOLD) then
+        fly_path = pathfind_with_tolerance(fly_result, true, radius)
+        walk_path(fly_path, true, radius, 0.01, spot)
+    else
+        walk_path(path, false, radius, 0.01, spot)
+    end
     return true
 end
 
-function walk_path(path, fly, range, stop_if_stuck)
+function walk_path(path, fly, range, stop_if_stuck, ref_point)
     stop_if_stuck = default(stop_if_stuck, false)
-    local pos = path[path.Count - 1]
+    ref_point = default(ref_point, path[path.Count - 1])
     local ti = ResetTimeout()
     IPC.vnavmesh.MoveTo(path, fly)
-    if not GetCharacterCondition(4) and (fly or path_length(path) > 30) then
+    if not GetCharacterCondition(4) and (fly or path_length(path) > WALK_THRESHOLD) then
         Actions.ExecuteGeneralAction(9)
     end
     local last_pos
     while (IPC.vnavmesh.IsRunning() or IPC.vnavmesh.PathfindInProgress()) do
         CheckTimeout(60, ti, CallerName(false), "Waiting for pathfind")
         local cur_pos = Player.Entity.Position
-        if range ~= nil and Vector3.Distance(Entity.Player.Position, pos) <= range then
+        if range ~= nil and Vector3.Distance(Entity.Player.Position, ref_point) <= range then
             IPC.vnavmesh.Stop()
         end
         if not fly or GetCharacterCondition(4) then
