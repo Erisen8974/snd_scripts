@@ -18,22 +18,20 @@ local required_plugins = {
 
 
 quest_npcs = {
-    YokHuy = { Position = Vector3(493.2173, 142.24991, 783.0471), TerritoryId = 1187, Name = "Vuyargur" },
-    PeluPelu = { Position = Vector3(770.8533, 12.846572, -259.50546), TerritoryId = 1188, Name = "Yubli", PathRange = 2, InteractRange = 7 },
-    MamoolJa = { Position = Vector3(589.3186, -142.89168, 729.4575), TerritoryId = 1189, Name = "Kageel Ja" },
+    YokHuy = { Position = Vector3(493.2173, 142.24991, 783.0471), TerritoryId = 1187, Name = "Vuyargur", Category = "Crafting" },
+    PeluPelu = { Position = Vector3(770.8533, 12.846572, -259.50546), TerritoryId = 1188, Name = "Yubli", Category = "Combat", PathRange = 2, InteractRange = 7 },
+    MamoolJa = { Position = Vector3(589.3186, -142.89168, 729.4575), TerritoryId = 1189, Name = "Kageel Ja", Category = "Gathering" },
 }
 
 function PeluPelu(n, class)
-    class = default(class, DEFAULT_COMBAT)
-    GetBeastTribeQuest(class, quest_npcs.PeluPelu, false, n)
+    GetBeastTribeQuest(quest_npcs.PeluPelu, class, false, n)
     --[[GetBeastTribeQuestOld("Yubli", class,
         "H4sIAAAAAAAACu1SwW7aQBD9FTTnLbJpCfbeIkoiWkFJoCEQ5bDUE7ySd4d6Zxsh5H+v1hgIRcqpl0o97bzn9Zu3M28HY2UQJDxop7m18KtCt8bUGpG3DAJuS/IbkPDdrkOFGQi4IcpARgJGynpV1OVMlWvkW8U5lkNGU5Nztd2QtuxAPu1gQk6zJgtyB48ge724HXWTWMACZNxpJ5+uur2OgCXID51u2u59TOJKwJIsDj+DjOMkEXCvMu0dyDRN03ZwQL/QoOW63URx/qJtBvJFFQ4FDC1jqX7wXHP+LYhE51zzdDhn//AZhT6L5lzWZyXA5fR6+EmTdRc9a4FYwMAQ46E3o2nK6/pGA+48On5bT/HnfsC0augp06ZPNmucRQK+6qLo11sK6J484+k9/Vxxn4xRYRqBCH7nSvPJaEA3VJ6LBnKmDY7cGRzMLodRCRi6Sa4skzmKhhWAtL4oBIwRM7fP0eHzPh/armfbDYYtBo0xZXi8EcAXWoGMKvF3I9N5Jy9c+v9xoX87Ls/VbwBV+anMBAAA",
         false, n)]]
 end
 
 function MamoolJa(n, class)
-    class = default(class, DEFAULT_GATHER)
-    GetBeastTribeQuest(class, quest_npcs.MamoolJa, true, n)
+    GetBeastTribeQuest(quest_npcs.MamoolJa, class, true, n)
     --[[GetBeastTribeQuestOld("Kageel Ja", class,
         "H4sIAAAAAAAACu2V32/TMBDH/5Xqnk0U50cX+w2VbeqmlrIVyop48MitsZT4SuyApir/O3KabgsbvIKgT777xrk7331k72CuKgQJH7TVbnSpNojl6EKNZtQYBwzOa2q2IOG92XgLc2BwRpSDDBnMlGlU2ZlLVW/QnStXYD11WHXiSt1vSRtnQX7awYKsdpoMyB18BJlmWRBlIk0Z3IB8xZMoyAQfZwzWIE9iHvCTcdwyWJPB6RuQnGeCwZXKdWNBCiFE4Eugb1ihcV2+hXLFnTY5yDtVWmQwNQ5r9cWttCve+iDhUOsPD0P1p0JDn+emX9fd2jKwBX0//KTJ2Gc5uwCcwWlFDg+5HVa9+brb0TvvGrTuqX2NX/cdpttevna0nZDJ+8pCBpe6LCfdmLx3RY3Dx/NMCuUmVFXKd8MLvt6V0u6xUO+dUT0M6sWlrnBmB+7p8nkzWgZTuyiUcVQ9BPUjAGmasmQwR8ztHqTD5z0g2myW91v0U/Qx5pTjww7vXNAtyLBlLzCTBHwci+TATBIIHidRz0wcJFkm0l9Cw8MhMvwpMq5ujsT8RcTs5/FngYl+c8Ucefk3bxgRJFHy8qMUiSAep+KIi/w/cfnc/gA+PsqiMAkAAA==",
         true, n)]]
@@ -55,7 +53,7 @@ end
 
 function GetBeastTribeQuestOld(npc, class, path, one_per, n)
     require_plugins(required_plugins)
-    n = default(n, 3)
+    n = default(n, 1)
     one_per = default(one_per, false)
     yield("/at y")
     equip_gearset(class)
@@ -92,10 +90,21 @@ function move_to_quest_giver(path)
     land_and_dismount()
 end
 
-function GetBeastTribeQuest(class, path, one_per, n)
+function GetBeastTribeQuest(path, class, one_per, n)
     require_plugins(required_plugins)
     n = default(n, 3)
     one_per = default(one_per, false)
+    if class == nil then
+        if path.Category == "Combat" then
+            class = DEFAULT_COMBAT
+        elseif path.Category == "Gathering" then
+            class = DEFAULT_GATHER
+        elseif path.Category == "Crafting" then
+            class = DEFAULT_CRAFT
+        else
+            StopScript("NoClass", CallerName(false), "No class specified in call or path")
+        end
+    end
     yield("/at y")
 
     for i = 1, n do
