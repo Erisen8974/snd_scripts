@@ -91,7 +91,9 @@ end
 
 function move_near_point(spot, radius, fly)
     fly = default(fly, false)
-    local target = Vector3(spot.X + random_real(-radius, radius), spot.Y, spot.Z + random_real(-radius, radius))
+    local distance = random_real(0, radius)
+    local angle = random_real(0, math.pi * 2)
+    local target = Vector3(spot.X + distance * math.sin(angle), spot.Y, spot.Z + distance * math.cos(angle))
     local result, fly_result
     target.Y = target.Y + 0.5
     if fly then
