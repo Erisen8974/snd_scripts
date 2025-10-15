@@ -55,6 +55,7 @@ function load_aether_info()
             local row = sheet[r]
             if row.IsAetheryte and Instances.Telepo:IsAetheryteUnlocked(r) then
                 aether_info[row.RowId] = {
+                    AetherId = row.RowId,
                     Name = row.PlaceName.Name,
                     TerritoryId = row.Territory.RowId,
                     Position = Instances.Telepo:GetAetherytePosition(r)

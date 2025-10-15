@@ -39,7 +39,7 @@ function move_to_quest_giver(path)
             StopScript("NoAetheryte", CallerName(false), "No aetherite found for", path.TerritoryId)
         end
         repeat
-            yield("/tp " .. a.Name)
+            Instances.Telepo:Teleport(a.AetherId, 0) -- IDK what the sub index is. if things break its probably that.
             wait(1)
         until Player.Entity.IsCasting
         ZoneTransition()
