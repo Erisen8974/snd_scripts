@@ -6,7 +6,8 @@ on:
       force_all:
         description: 'Run for all files (ignore changed files)'
         required: false
-        default: 'false'
+        type: boolean
+        default: false
       force_files:
         description: 'Comma-separated list of files to force (e.g. moon_man,wt_doer)'
         required: false
@@ -14,7 +15,8 @@ on:
       dry_run:
         description: 'If true, do not push changes (dry run)'
         required: false
-        default: 'false'
+        type: boolean
+        default: false
   push:
     paths:
       - '*.lua'
