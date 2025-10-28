@@ -1,0 +1,9 @@
+A file `char_info.lua` can be placed here with a char info array. If present it will be referenced to allow short names in some utility functions. Other fields may be added to support other functions.
+
+```lua
+private_char_info = {
+    ["Char Name"] = { Homeworld = "World" },
+}
+```
+
+The other contents of this folder should be ignored by git to avoid publishing char info!

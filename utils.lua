@@ -2,6 +2,9 @@ require 'legacy_interface'
 
 import 'System.Numerics'
 
+-- if present load the character info
+pcall(require, 'private/char_info')
+
 
 -----------------------
 -- General Utilities --
@@ -172,6 +175,100 @@ function open_retainer_bell()
         until not IPC.AutoRetainer.IsBusy()
     end
     wait_any_addons("RetainerList")
+end
+
+function title_case(str)
+    local title = str:gsub("(%a)([%w']*)", function(first, rest) return first:upper() .. rest:lower() end)
+    return title
+end
+
+---------------------------------------------------------
+-------- Character utils if char data was loaded --------
+---------------------------------------------------------
+
+function char_cannonical_name(char)
+    if char == nil then
+        return nil
+    end
+    if private_char_info == nil then
+        return title_case(char)
+    end
+    char = char:upper()
+    potential_char = {}
+    for known_char, _ in pairs(private_char_info) do
+        known_char = known_char:upper()
+        if known_char == char then
+            return title_case(known_char)
+        end
+        if known_char:match("^" .. char .. " ") then
+            return title_case(known_char)
+        end
+        if known_char:match(char) then
+            table.insert(potential_char, known_char)
+        end
+    end
+    if #potential_char == 1 then
+        return title_case(potential_char[1])
+    elseif #potential_char > 1 then
+        log_debug("Ambiguous character name", char, "candidates:", table.concat(potential_char, ", "))
+        return title_case(char)
+    else
+        log_debug("Unknown character name", char)
+        return title_case(char)
+    end
+end
+
+function char_homeworld(char)
+    if char == nil then
+        return nil
+    end
+    if private_char_info == nil then
+        return nil
+    end
+    char = char_cannonical_name(char)
+    local char_info = private_char_info[char]
+    if char_info == nil then
+        return nil
+    end
+    return private_char_info[char].Homeworld
+end
+
+function change_character(char, world, max_time)
+    max_time = default(max_time, 10 * 60)
+    local ti = ResetTimeout()
+    char = char_cannonical_name(char)
+    world = title_case(default(world, char_homeworld(char)))
+
+    local target = string.format("%s@%s", char, world)
+
+    log_debug("Changing to character", target)
+
+    if Player.Entity.Name == char and luminia_row_checked("World", Player.Entity.HomeWorld).Name == world then
+        log_debug("Already on target character", target)
+        return
+    end
+
+    IPC.Lifestream.ExecuteCommand(target)
+
+    repeat
+        CheckTimeout(max_time, ti, "ZoneTransition", "Waiting for lifestream to start")
+        wait(.1)
+    until IPC.Lifestream.IsBusy()
+
+    repeat
+        CheckTimeout(max_time, ti, "ZoneTransition", "Waiting for lifestream to finish")
+        wait(10)
+    until not IPC.Lifestream.IsBusy()
+    log_debug("Lifestream done")
+
+    repeat
+        CheckTimeout(max_time, ti, "ZoneTransition", "Waiting for zone transition to end")
+        wait(5)
+    until IsPlayerAvailable()
+
+    log_debug("relog done")
+    wait_ready(max_time, 2)
+    log_debug("Ready!")
 end
 
 function is_busy()
@@ -486,7 +583,9 @@ function logify(first, ...)
 end
 
 function log(...)
-    Svc.Chat:Print(logify(...))
+    local msg = logify(...)
+    Svc.Chat:Print(msg)
+    Dalamud.Log(msg)
 end
 
 function log_count(list, c)
