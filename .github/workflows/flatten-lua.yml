@@ -11,6 +11,10 @@ on:
         description: 'Comma-separated list of files to force (e.g. moon_man,wt_doer)'
         required: false
         default: ''
+      dry_run:
+        description: 'If true, do not push changes (dry run)'
+        required: false
+        default: 'false'
   push:
     paths:
       - '*.lua'
@@ -35,7 +39,9 @@ jobs:
           files=$(find metadata -type f -name '*.meta' -exec basename {} .meta \; | jq -R . | jq -s -c .)
           echo "files=${files}" >> $GITHUB_OUTPUT
 
-  flatten:
+  # Parallel matrix approach: each worker produces a single artifact, then a single job
+  # collects all artifacts and commits/pushes once.
+  flatten-matrix:
     needs: detect-files
     runs-on: ubuntu-latest
     strategy:
@@ -49,65 +55,120 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Get changed files
-        id: changed
-        uses: tj-actions/changed-files@v44
-        with:
-          files: |
-            metadata/${{ matrix.file }}.meta
-            metadata/${{ matrix.file }}.lua
-
-      - name: Determine if this file should be forced
-        id: should_run
+      - name: Clone target repo for sources
         run: |
-          force_all="${{ github.event.inputs.force_all }}"
-          force_files="${{ github.event.inputs.force_files }}"
-          file="${{ matrix.file }}"
-          should_run="false"
+          git clone --depth 1 https://x-access-token:${{ secrets.FLAT_SND_TOKEN }}@github.com/Erisen8974/flat_SND_scripts.git flat_snd_scripts
+
+      - name: Determine whether to export
+        id: check
+        env:
+          BEFORE_SHA: "${{ github.event.before }}"
+          AFTER_SHA: "${{ github.sha }}"
+          FORCE_ALL: "${{ github.event.inputs.force_all }}"
+          FORCE_FILES: "${{ github.event.inputs.force_files }}"
+          FILE: "${{ matrix.file }}"
+        run: |
+          set -euo pipefail
+          before="$BEFORE_SHA"
+          sha="$AFTER_SHA"
+          force_all="$FORCE_ALL"
+          force_files="$FORCE_FILES"
+          file="$FILE"
+          changed_list=""
+          if [[ -z "$before" || "$before" == "0000000000000000000000000000000000000000" ]]; then
+            if git rev-parse --verify "$sha~1" >/dev/null 2>&1; then
+              changed_list=$(git diff --name-only "$sha~1" "$sha" || true)
+            else
+              changed_list=$(git ls-tree -r --name-only HEAD || true)
+            fi
+          else
+            changed_list=$(git diff --name-only "$before" "$sha" || true)
+          fi
+
+          should_run=false
           if [[ "$force_all" == "true" ]]; then
-            should_run="true"
-          elif [[ -n "$force_files" ]]; then
+            should_run=true
+          fi
+          if [[ -n "$force_files" && "$should_run" == "false" ]]; then
             IFS=',' read -ra arr <<< "$force_files"
             for f in "${arr[@]}"; do
               if [[ "$f" == "$file" ]]; then
-                should_run="true"
+                should_run=true
                 break
               fi
             done
           fi
-          echo "should_run=$should_run" >> $GITHUB_OUTPUT
+
+          if [[ "$should_run" == "false" ]]; then
+            if echo "$changed_list" | grep -Eq "^metadata/${file}\.(lua|meta)$"; then
+              should_run=true
+            fi
+          fi
+
+          sources_file="flat_snd_scripts/${file}_flat.lua.sources"
+          if [[ -f "$sources_file" && "$should_run" == "false" ]]; then
+            while IFS= read -r dep || [[ -n "$dep" ]]; do
+              if echo "$changed_list" | grep -Fxq "$dep"; then
+                should_run=true
+                break
+              fi
+            done < "$sources_file"
+          fi
+
+          if [[ "$should_run" == "true" ]]; then
+            echo "exported=true" >> $GITHUB_OUTPUT
+          else
+            echo "exported=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Export file
+        if: steps.check.outputs.exported == 'true'
+        run: |
+          python exporter.py metadata/${{ matrix.file }}.lua --output ${{ matrix.file }}_flat.lua
+
+      - name: Upload flattened file artifact
+        if: steps.check.outputs.exported == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.file }}_flat
+          path: "${{ matrix.file }}_flat.lua"
+
+  merge-artifacts:
+    needs: flatten-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: downloaded
 
       - name: Clone target repo for sources
         run: |
           git clone --depth 1 https://x-access-token:${{ secrets.FLAT_SND_TOKEN }}@github.com/Erisen8974/flat_SND_scripts.git flat_snd_scripts
 
-      - name: Check if any dependency in sources file changed
-        id: sources_changed
+      - name: Move flattened files into repo and commit once
+        env:
+          DRY_RUN: "${{ github.event.inputs.dry_run }}"
         run: |
-          file="${{ matrix.file }}"
-          sources_file="flat_snd_scripts/${file}_flat.lua.sources"
-          should_run="false"
-          if [[ -f "$sources_file" ]]; then
-            while IFS= read -r dep; do
-              if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -Fxq "$dep"; then
-                should_run="true"
-                break
-              fi
-            done < "$sources_file"
-          fi
-          echo "should_run=$should_run" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          find downloaded -type f -name '*_flat.lua' -print0 | while IFS= read -r -d $'\0' f; do
+            echo "Copying $f to flat_snd_scripts/"
+            cp "$f" flat_snd_scripts/ || true
+          done
 
-      - name: Run exporter.py if relevant files changed or dependency changed
-        if: steps.changed.outputs.any_changed == 'true' || steps.should_run.outputs.should_run == 'true' || steps.sources_changed.outputs.should_run == 'true'
-        run: |
-          python exporter.py metadata/${{ matrix.file }}.lua --output flat_snd_scripts/${{ matrix.file }}_flat.lua
-
-      - name: Commit and push
-        if: steps.changed.outputs.any_changed == 'true' || steps.should_run.outputs.should_run == 'true' || steps.sources_changed.outputs.should_run == 'true'
-        run: |
           cd flat_snd_scripts
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "Update ${{ matrix.file }}_flat.lua [auto]" || echo "No changes to commit"
-          git push
+          if git status --porcelain | grep -q .; then
+            git add -A
+            git commit -m "Update flat scripts [auto]" || echo "No changes to commit"
+            if [[ "$DRY_RUN" == "true" ]]; then
+              echo "Dry run enabled - skipping git push"
+            else
+              git push
+            fi
+          else
+            echo "No changes to push"
+          fi
