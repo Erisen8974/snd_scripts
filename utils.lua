@@ -218,7 +218,7 @@ function char_cannonical_name(char)
     end
 end
 
-function char_homeworld(char)
+function get_char_info(char)
     if char == nil then
         return nil
     end
@@ -226,11 +226,15 @@ function char_homeworld(char)
         return nil
     end
     char = char_cannonical_name(char)
-    local char_info = private_char_info[char]
+    return private_char_info[char]
+end
+
+function char_homeworld(char)
+    local char_info = get_char_info(char)
     if char_info == nil then
         return nil
     end
-    return private_char_info[char].Homeworld
+    return char_info.Homeworld
 end
 
 function change_character(char, world, max_time)

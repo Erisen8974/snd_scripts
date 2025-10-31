@@ -9,7 +9,7 @@ local dps_fill = "Thancred"                  -- if youre dps add tank and Graha 
 local duty_blacklist = {}
 function reset_blacklist()
     duty_blacklist = {
-        447, -- Limitless Blue, doesnt touch the hookshots
+        --447, -- Limitless Blue, doesnt touch the hookshots, should work now with the path
         577, -- P1T6 ex, no module support, falls off the platform
         --720, -- emanation ex, no module support, sometimes works, depends if the vril mech is used too fast
         748, -- Phantom train, gets caught by the ghosties and gets stuck
@@ -120,9 +120,23 @@ function wt_duty()
 end
 
 function run_content(type, unsync, instance_id)
-    setup_content(type, unsync)
     local count = wt_count()
-    IPC.AutoDuty.Run(instance_id, 1, false)
+    local s = os.clock()
+    repeat
+        IPC.AutoDuty.Stop()
+        InstancedContent.LeaveCurrentContent()
+        if os.clock() - s > 60 then
+            log_(LEVEL_ERROR, log, "Failed to queue instance", instance_id, "blacklisting it.")
+            table.insert(duty_blacklist, instance_id)
+            return
+        end
+        setup_content(type, unsync)
+        IPC.AutoDuty.Run(instance_id, 1, false)
+        local c = os.clock()
+        repeat
+            wait(1)
+        until Svc.ClientState.TerritoryType == instance_id or os.clock() - c > 15
+    until Svc.ClientState.TerritoryType == instance_id
     repeat
         wait(1)
     until IPC.AutoDuty.IsStopped()
@@ -137,10 +151,12 @@ function run_content(type, unsync, instance_id)
 end
 
 function setup_content(type, unsync)
+    IPC.AutoDuty.SetConfig("autoDutyModeEnum", "Looping")
     if type == "Dungeons" and unsync then
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Regular")
         IPC.AutoDuty.SetConfig("Unsynced", "True")
     elseif type == "Dungeons" and not unsync then
+        IPC.AutoDuty.SetConfig("Unsynced", "False")
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Trust")
         local command = String[4]
         command[0] = "set"
