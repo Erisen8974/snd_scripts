@@ -61,75 +61,11 @@ jobs:
         run: |
           git clone --depth 1 https://x-access-token:${{ secrets.FLAT_SND_TOKEN }}@github.com/Erisen8974/flat_SND_scripts.git flat_snd_scripts
 
-      - name: Determine whether to export
-        id: check
-        env:
-          BEFORE_SHA: "${{ github.event.before }}"
-          AFTER_SHA: "${{ github.sha }}"
-          FORCE_ALL: "${{ github.event.inputs.force_all }}"
-          FORCE_FILES: "${{ github.event.inputs.force_files }}"
-          FILE: "${{ matrix.file }}"
-        run: |
-          set -euo pipefail
-          before="$BEFORE_SHA"
-          sha="$AFTER_SHA"
-          force_all="$FORCE_ALL"
-          force_files="$FORCE_FILES"
-          file="$FILE"
-          changed_list=""
-          if [[ -z "$before" || "$before" == "0000000000000000000000000000000000000000" ]]; then
-            if git rev-parse --verify "$sha~1" >/dev/null 2>&1; then
-              changed_list=$(git diff --name-only "$sha~1" "$sha" || true)
-            else
-              changed_list=$(git ls-tree -r --name-only HEAD || true)
-            fi
-          else
-            changed_list=$(git diff --name-only "$before" "$sha" || true)
-          fi
-
-          should_run=false
-          if [[ "$force_all" == "true" ]]; then
-            should_run=true
-          fi
-          if [[ -n "$force_files" && "$should_run" == "false" ]]; then
-            IFS=',' read -ra arr <<< "$force_files"
-            for f in "${arr[@]}"; do
-              if [[ "$f" == "$file" ]]; then
-                should_run=true
-                break
-              fi
-            done
-          fi
-
-          if [[ "$should_run" == "false" ]]; then
-            if echo "$changed_list" | grep -Eq "^metadata/${file}\.(lua|meta)$"; then
-              should_run=true
-            fi
-          fi
-
-          sources_file="flat_snd_scripts/${file}_flat.lua.sources"
-          if [[ -f "$sources_file" && "$should_run" == "false" ]]; then
-            while IFS= read -r dep || [[ -n "$dep" ]]; do
-              if echo "$changed_list" | grep -Fxq "$dep"; then
-                should_run=true
-                break
-              fi
-            done < "$sources_file"
-          fi
-
-          if [[ "$should_run" == "true" ]]; then
-            echo "exported=true" >> $GITHUB_OUTPUT
-          else
-            echo "exported=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Export file
-        if: steps.check.outputs.exported == 'true'
         run: |
           python exporter.py metadata/${{ matrix.file }}.lua --output ${{ matrix.file }}_flat.lua
 
       - name: Upload flattened file artifact
-        if: steps.check.outputs.exported == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.file }}_flat
@@ -143,25 +79,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: downloaded
-
       - name: Clone target repo for sources
         run: |
           git clone --depth 1 https://x-access-token:${{ secrets.FLAT_SND_TOKEN }}@github.com/Erisen8974/flat_SND_scripts.git flat_snd_scripts
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: flat_snd_scripts
 
       - name: Move flattened files into repo and commit once
         env:
           DRY_RUN: "${{ github.event.inputs.dry_run }}"
         run: |
           set -euo pipefail
-          # Copy all flattened lua files and their .sources files if present
-          find downloaded -type f -name '*_flat.lua*' -print0 | while IFS= read -r -d $'\0' f; do
-            echo "Copying $f to flat_snd_scripts/"
-            cp "$f" flat_snd_scripts/ || true
-          done
 
           cd flat_snd_scripts
           git config user.name "github-actions[bot]"
