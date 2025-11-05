@@ -156,6 +156,8 @@ function setup_content(type, unsync)
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Regular")
         IPC.AutoDuty.SetConfig("Unsynced", "True")
     elseif type == "Dungeons" and not unsync then
+        -- not opening the interface seems to break setting trust members
+        Engines.Native.Run("/ad")
         IPC.AutoDuty.SetConfig("Unsynced", "False")
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Trust")
         local command = String[4]
