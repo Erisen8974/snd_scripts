@@ -83,17 +83,26 @@ function get_allowances()
 end
 
 function RunQuesty(max_time)
-    max_time = default(max_time, 10 * 60)
+    max_time = default(max_time, 15 * 60)
     local ti = ResetTimeout()
     repeat
-        CheckTimeout(10, ti, CallerName(false), "Starting questy")
-        yield("/qst start")
-        wait(2)
-    until IPC.Questionable.IsRunning()
-    repeat
-        CheckTimeout(max_time, ti, CallerName(false), "Running questy")
-        wait(.1)
-    until not IPC.Questionable.IsRunning()
+        local loop_ti = ResetTimeout()
+        repeat
+            CheckTimeout(10, loop_ti, CallerName(false), "Starting questy")
+            yield("/qst start")
+            wait(2)
+        until IPC.Questionable.IsRunning()
+        repeat
+            CheckTimeout(max_time, ti, CallerName(false), "Running questy")
+            wait(.1)
+        until not IPC.Questionable.IsRunning()
+        local step = IPC.Questionable.GetCurrentStepData()
+        log_(LEVEL_DEBUG, log, "Questy step data:", step)
+        if step ~= nil then
+            log_(LEVEL_ERROR, log, "Questy ended but step data is not nil, restarting questy",
+                step.TerritoryId, step.QuestId, step.Position, step.InteractionType)
+        end
+    until step == nil
 end
 
 function AcceptQuest(who, which, qlist)

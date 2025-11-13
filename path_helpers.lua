@@ -257,7 +257,7 @@ function ZoneTransition()
         CheckTimeout(30, ti, "ZoneTransition", "Waiting for zone transition to end")
         while IPC.vnavmesh.BuildProgress() > 0 do
             CheckTimeout(10 * 60, ti, "ZoneTransition", "Waiting for navmesh to finish building")
-            wait(10)
+            wait(0.1)
         end
         wait(0.1)
     until IsPlayerAvailable()
