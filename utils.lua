@@ -114,7 +114,7 @@ function close_yes_no(accept, expected_text)
     if IsAddonReady("SelectYesno") then
         if expected_text ~= nil then
             local node = GetNodeText("SelectYesno", 1, 2)
-            if node == nil or not node:find(expected_text) then
+            if node == nil or not node:upper():find(expected_text:upper()) then
                 log_debug("Expected yesno text '" .. expected_text .. "' didnt match actual text:", node)
                 return
             end

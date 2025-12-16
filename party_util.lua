@@ -42,6 +42,6 @@ function wait_for_member(name, match_name, max_wait)
     while not party_has_member(match_name) do
         party_invite_friend(name)
         CheckTimeout(max_wait, ti, CallerName(), "Waiting for party member", name)
-        wait(2)
+        wait(3)
     end
 end

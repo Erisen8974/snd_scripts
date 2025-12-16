@@ -233,3 +233,34 @@ function move_items(source_inv, dest_inv, lowest_item_id, highest_item_id)
     end
     return true -- all items if any were able to be moved
 end
+
+function open_map(map_name, partial_ok)
+    partial_ok = default(partial_ok, false)
+    local ready = false
+    repeat
+        local addon = Addons.GetAddon("SelectIconString")
+        if addon.Ready then
+            title = addon:GetAtkValue(0)
+            if title ~= nil then
+                title = title.ValueString
+            end
+            if title == "Decipher" then
+                ready = true
+            else
+                log_(LEVEL_ERROR, log, "SelectIconString found with unexpected title:", title)
+                close_addon("SelectIconString")
+            end
+        end
+        if not ready then
+            Actions.ExecuteGeneralAction(19)
+            wait(0.5)
+        end
+    until ready
+    if not SelectInList(map_name, "SelectIconString", partial_ok) then
+        log_(LEVEL_ERROR, log, "Map", map_name, "not found in map list")
+        return false
+    end
+    wait_any_addons("SelectYesno")
+    close_yes_no(true, map_name)
+    wait_ready(10, 1)
+end

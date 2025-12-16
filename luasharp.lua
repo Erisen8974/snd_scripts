@@ -57,6 +57,13 @@ function deref_pointer(ptr, ctype)
     return ref
 end
 
+function cs_instance(type, assembly)
+    local T, T_ty = load_type(type, assembly)
+
+    local instance = T.Instance()
+    return deref_pointer(instance, T_ty)
+end
+
 function assembly_name(inputstr)
     for str in string.gmatch(inputstr, "[^%.]+") do
         return str
@@ -225,17 +232,33 @@ function get_generic_method(targetType, method_name, genericTypes)
     for i = 0, methods.Length - 1 do
         local m = methods[i]
         if m.Name == method_name and m.IsGenericMethodDefinition and m:GetGenericArguments().Length == genericArgsArr.Length then
-            local constructed = nil
-            local success, err = pcall(function()
-                constructed = m:MakeGenericMethod(genericArgsArr)
-            end)
-            if success then
-                return constructed
-            else
-                StopScript("Error constructing generic method", CallerName(false), err)
-            end
+            return m:MakeGenericMethod(genericArgsArr)
         end
     end
     StopScript("No generic method found", CallerName(false), "No matching generic method found for", method_name, "with",
         #genericTypes, "generic args")
+end
+
+function get_method_overload(targetType, method_name, paramTypes)
+    local methods = targetType:GetMethods()
+    for i = 0, methods.Length - 1 do
+        local m = methods[i]
+        if m.Name == method_name then
+            local params = m:GetParameters()
+            if params.Length == #paramTypes then
+                local match = true
+                for j = 0, params.Length - 1 do
+                    if params[j].ParameterType ~= paramTypes[j + 1] then
+                        match = false
+                        break
+                    end
+                end
+                if match then
+                    return m
+                end
+            end
+        end
+    end
+    StopScript("No method overload found", CallerName(false), "No matching overload found for", method_name, "with",
+        #paramTypes, "parameters")
 end
