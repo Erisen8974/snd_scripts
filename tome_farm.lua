@@ -8,12 +8,17 @@ local CURRENT_WEEKLY_TOME = 49 -- mnemonics
 
 function get_limited_tome_count()
     local inst = cs_instance("FFXIVClientStructs.FFXIV.Client.Game.InventoryManager")
+
     return inst:GetTomestoneCount(CURRENT_WEEKLY_TOME),inst:GetWeeklyAcquiredTomestoneCount()
 end
 
 
 function cap_tomes(weekly_limit, total_limit)
-    weekly_limit = default(weekly_limit, 450)
+    if weekly_limit == nil then
+        local InventoryManager = load_type("FFXIVClientStructs.FFXIV.Client.Game.InventoryManager")
+        weekly_limit = InventoryManager.GetLimitedTomestoneWeeklyLimit()
+        log_(LEVEL_INFO, log, "Auto detected weekly limit:", weekly_limit)
+    end
     total_limit = default(total_limit, 2000)
 
     local cur_count, cur_week = get_limited_tome_count()
