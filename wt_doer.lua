@@ -108,7 +108,7 @@ function wt_duty()
                 if duty_executable(content) then
                     log("Using:", type, unsync, '-', content.Name, '-', instance_id, '-',
                         IPC.AutoDuty.ContentHasPath(instance_id))
-                    run_content(type, unsync, instance_id)
+                    run_content(type, unsync, instance_id, wt_count)
                     return true
                 else
                     log("Bingo cell", i, "not executable", duty.Data, '-', wt_item_name(duty))
@@ -119,8 +119,9 @@ function wt_duty()
     return false
 end
 
-function run_content(type, unsync, instance_id)
-    local count = wt_count()
+function run_content(type, unsync, instance_id, validate)
+    for_wt = default(for_wt, true)
+    local pre_validation = validate()
     local s = os.clock()
     repeat
         IPC.AutoDuty.Stop()
@@ -140,7 +141,7 @@ function run_content(type, unsync, instance_id)
     repeat
         wait(1)
     until IPC.AutoDuty.IsStopped()
-    if count == wt_count() then
+    if validate() == pre_validation then
         log_debug("Duty failed? Still in instance?", Svc.ClientState.TerritoryType, instance_id)
         table.insert(duty_blacklist, instance_id)
         if Svc.ClientState.TerritoryType == instance_id then
