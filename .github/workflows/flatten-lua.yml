@@ -29,7 +29,7 @@ jobs:
 
       - id: set-matrix
         run: |
-          files=$(find metadata -type f -name '*.meta' -exec basename {} .meta \; | jq -R . | jq -s -c .)
+          files=$(find metadata -type f -name '*.lua' -exec basename {} .lua \; | jq -R . | jq -s -c .)
           echo "files=${files}" >> $GITHUB_OUTPUT
 
   # Parallel matrix approach: each worker produces a single artifact, then a single job
