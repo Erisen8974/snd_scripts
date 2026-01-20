@@ -73,34 +73,16 @@ def main():
 
     parser = argparse.ArgumentParser(description="Flatten Lua scripts by resolving require statements.")
     parser.add_argument('base_script', help='Path to base Lua script')
-    parser.add_argument('--config-header', help='Path to configuration header file (optional if .meta file exists)')
     parser.add_argument('--search-paths', nargs='*', default=['.'], help='List of directories to search for required modules')
     parser.add_argument('--output', default='flattened.lua', help='Output file name')
     args = parser.parse_args()
 
-    # Determine config header path
-    config_header_path = args.config_header
-    if not config_header_path:
-        base_script_abs = os.path.abspath(args.base_script)
-        base_dir = os.path.dirname(base_script_abs)
-        base_name = os.path.splitext(os.path.basename(base_script_abs))[0]
-        meta_path = os.path.join(base_dir, base_name + '.meta')
-        if os.path.isfile(meta_path):
-            config_header_path = meta_path
-        else:
-            print("Error: No config_header provided and no .meta file found in metadata folder.", file=sys.stderr)
-            sys.exit(1)
-
-    # Read configuration header
-    with open(config_header_path, 'r', encoding='utf-8') as f:
-        config_header = f.read()
 
     included_files = set()
     output_lines = []
 
     # Add configuration header at the top
     output_lines.append('-- Auto generated file, do not edit!')
-    output_lines.extend(config_header.splitlines())
 
     # Prepare to track sources
     process_lua_file.sources = []
