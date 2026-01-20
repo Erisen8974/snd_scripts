@@ -42,28 +42,41 @@ function TownPath(town, x, y, z, shard, dest_town, ...)
 end
 
 local aether_info = nil
+local net_info = nil
 function load_aether_info()
     if aether_info == nil then
         local t = os.clock()
         aether_info = {}
+        net_info = {}
         local sheet = Excel.GetSheet("Aetheryte")
         for r = 0, sheet.Count - 1 do
-            if os.clock() - t > 1.0 / 20.0 then
+            if os.clock() - t > 1.0 / 10.0 then
                 wait(0)
                 t = os.clock()
             end
             local row = sheet[r]
-            if row.IsAetheryte and Instances.Telepo:IsAetheryteUnlocked(r) then
-                aether_info[row.RowId] = {
-                    AetherId = row.RowId,
-                    Name = row.PlaceName.Name,
-                    TerritoryId = row.Territory.RowId,
-                    Position = Instances.Telepo:GetAetherytePosition(r)
-                }
+            if Instances.Telepo:IsAetheryteUnlocked(r) then
+                if row.IsAetheryte then
+                    aether_info[row.RowId] = {
+                        AetherId = row.RowId,
+                        Name = row.PlaceName.Name,
+                        TerritoryId = row.Territory.RowId,
+                        Position = Instances.Telepo:GetAetherytePosition(r)
+                    }
+                end
+                if row.AethernetName.RowId ~= 0 then
+                    net_info[row.RowId] = {
+                        Group = row.AethernetGroup,
+                        Name = row.AethernetName.Name,
+                        TerritoryId = row.Territory.RowId,
+                        Position = Instances.Telepo:GetAetherytePosition(r),
+                        Invisible = row.Invisible
+                    }
+                end
             end
         end
     end
-    return aether_info
+    return aether_info, net_info
 end
 
 function nearest_aetherite(territory_id, goal_point)
@@ -88,6 +101,29 @@ function random_real(lower, upper)
         math.randomseed()
     end
     return math.random() * (upper - lower) + lower
+end
+
+function warp_near_point(spot, radius, territory_id, fly)
+    fly = default(fly, false)
+    if Svc.ClientState.TerritoryType ~= territory_id then
+        local a = nearest_aetherite(territory_id, spot)
+        if a == nil then
+            StopScript("NoAetheryte", CallerName(false), "No aetherite found for", territory_id)
+        end
+        repeat
+            Instances.Telepo:Teleport(a.AetherId, 0) -- IDK what the sub index is. if things break its probably that.
+            wait(1)
+        until Player.Entity.IsCasting
+        ZoneTransition()
+    end
+    move_near_point(spot, radius, fly)
+    land_and_dismount()
+end
+
+function net_near_point(spot, radius, fly)
+    fly = default(fly, false)
+    move_near_point(spot, radius, fly)
+    land_and_dismount()
 end
 
 function move_near_point(spot, radius, fly)
@@ -120,6 +156,85 @@ function move_near_point(spot, radius, fly)
         walk_path(path, false, radius, 0.01, spot)
     end
     return true
+end
+
+function jump_to_point(p, runup, retry)
+    p = xyz_to_vec3(table.unpack(p))
+    runup = default(runup, .1)
+    retry = default(retry, false)
+    local start_pos = Player.Entity.Position
+    local last_pos = Player.Entity.Position
+    local stuck = nil
+    custom_path(false, { p })
+    repeat
+        wait(0)
+        if Vector3.Distance(last_pos, Player.Entity.Position) < 0.01 then
+            if stuck == nil then
+                stuck = os.clock()
+            elseif os.clock() - stuck > .25 then
+                log("Didnt move from start pos, jumping anyway")
+                break
+            end
+        else
+            last_pos = Player.Entity.Position
+            stuck = nil
+        end
+    until Vector3.Distance(Player.Entity.Position, start_pos) > runup or not IPC.vnavmesh.IsRunning()
+    if not IPC.vnavmesh.IsRunning() then
+        StopScript("Failed to jump", CallerName(false), "to point", p)
+    end
+    Actions.ExecuteGeneralAction(2)
+    local retries = 0
+    while IPC.vnavmesh.IsRunning() or Player.IsBusy do
+        wait(0.1)
+        if Vector3.Distance(last_pos, Player.Entity.Position) < 0.01 then
+            if stuck == nil then
+                stuck = os.clock()
+            elseif os.clock() - stuck > .25 then
+                if retry and retries < 5 then
+                    log("Stuck during jump, retrying", retries + 1)
+                    retries = retries + 1
+                    Actions.ExecuteGeneralAction(2)
+                else
+                    StopScript("Stuck during jump", CallerName(false), "to point", p, "Landed at", Player.Entity
+                        .Position)
+                end
+            end
+        else
+            last_pos = Player.Entity.Position
+            stuck = nil
+        end
+    end
+    if Vector3.Distance(Player.Entity.Position, p) > 3.0 then
+        StopScript("Missed jump", CallerName(false), "to point", p, "Landed at", Player.Entity.Position)
+    end
+    custom_path(false, { p })
+    while IPC.vnavmesh.IsRunning() or Player.IsBusy do
+        wait(0.1)
+    end
+    if Vector3.Distance(Player.Entity.Position, p) > 3.0 then
+        StopScript("Fell during reposition", CallerName(false), "to point", p, "Landed at", Player.Entity.Position)
+    end
+end
+
+function move_to_point(p)
+    p = xyz_to_vec3(table.unpack(p))
+    custom_path(false, { p })
+    local last_pos = Player.Entity.Position
+    local stuck = nil
+    while IPC.vnavmesh.IsRunning() or Player.IsBusy do
+        wait(0.1)
+        if Vector3.Distance(last_pos, Player.Entity.Position) < 0.01 then
+            if stuck == nil then
+                stuck = os.clock()
+            elseif os.clock() - stuck > .25 then
+                StopScript("Stuck during walk", CallerName(false), "to point", p, "Landed at", Player.Entity.Position)
+            end
+        else
+            last_pos = Player.Entity.Position
+            stuck = nil
+        end
+    end
 end
 
 function walk_path(path, fly, range, stop_if_stuck, ref_point)
@@ -421,4 +536,17 @@ function is_aethershard(obj)
         SvcObjectsKind = load_type("Dalamud.Game.ClientState.Objects.Enums.ObjectKind")
     end
     return obj.ObjectKind == SvcObjectsKind.Aetheryte
+end
+
+function xz_to_floor(X, Z)
+    local position = Vector3(X, 1000, Z)
+    local floor_point = IPC.vnavmesh.NearestPoint(position, 0, 2000)
+    return floor_point
+end
+
+function xz_to_landable(X, Z, range)
+    range = default(range, 20)
+    local position = Vector3(X, 1000, Z)
+    local floor_point = IPC.vnavmesh.PointOnFloor(position, false, range)
+    return floor_point
 end

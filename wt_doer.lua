@@ -32,6 +32,11 @@ function do_wt(gearset)
         end
     end
     log("WT Bingo completed", wt_count(), "of 9 done")
+
+    RunVislandRoute(
+        "H4sIAAAAAAAACu1SyW7bMBD9leKdGYNyEjjmrVAWuIVdJ3HhLOiBqSYWAZHjiqMUgaF/Dygri5trTkF54czDzJs3ywYz6wkGP0OwnoovF9wIQeGs5mbd4atkUQGFU+YCRitMbWhs1ZkLW69IzqyUVE+EfAcu7eOaXZAIc7vBnKMTxwFmgyuYvWw8OBqNR3qocA0zzLKBVriB0YNM7x+ODg/GrcINB5ocwxyMjhQubOGaCDNOL0VP+YE8BYEZKsytlPcuFDBSN6QwCUK1/S1LJ+WPxKF3sb5j7KL/qNSpzHX/d+J0qxBL/vuc5DhEmHtbxTc1O4JM4cSz0HNtId+bX7uI3jlvKMpb+5L+bMfLdz18KbzOORS9Mq3w3VVVzk1qXSt023rtJy+t5Oy9TcNIQNK7tE5ehSbvlOtd0gQunKdp3HFPFu+H0SpM4ry0Qdi/kKYNwISmqhRmREWcbhVu97E9DhdWi8c1pSUmihkX9JKfnG98B6Nb9ZH3Mvx/K/knvpVf7RMEuPS/vwQAAA==",
+        "Going to Khloe")
+
     return true
 end
 
