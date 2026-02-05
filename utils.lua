@@ -195,13 +195,20 @@ function char_cannonical_name(char)
     end
     char = char:upper()
     potential_char = {}
-    for known_char, _ in pairs(private_char_info) do
+    for known_char, known_char_info in pairs(private_char_info) do
         known_char = known_char:upper()
         if known_char == char then
             return title_case(known_char)
         end
         if known_char:match("^" .. char .. " ") then
             return title_case(known_char)
+        end
+        if known_char_info.ReferenceNames ~= nil then
+            for _, ref_name in pairs(known_char_info.ReferenceNames) do
+                if ref_name:upper() == char then
+                    return title_case(known_char)
+                end
+            end
         end
         if known_char:match(char) then
             table.insert(potential_char, known_char)
