@@ -259,6 +259,7 @@ function change_character(char, world, max_time)
         return
     end
 
+    running_lifestream = true
     IPC.Lifestream.ExecuteCommand(target)
 
     repeat
@@ -515,10 +516,18 @@ end
 function StopScript(message, caller, ...)
     caller = default(caller, CallerName())
     log("Fatal error " .. message .. " in " .. caller .. ": ", ...)
-    yield("/qst stop")
-    IPC.Lifestream.Abort()
-    IPC.visland.StopRoute()
-    IPC.vnavmesh.Stop()
+    if default(running_questy, false) then
+        yield("/qst stop")
+    end
+    if default(running_lifestream, false) then
+        IPC.Lifestream.Abort()
+    end
+    if default(running_visland, false) then
+        IPC.visland.StopRoute()
+    end
+    if default(running_vnavmesh, false) or default(running_visland, false) or default(running_lifestream, false) or default(running_questy, false) then
+        IPC.vnavmesh.Stop()
+    end
     luanet.error(logify(message, ...))
 end
 

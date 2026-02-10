@@ -43,6 +43,7 @@ function IsPlayerAvailable()
 end
 
 function PathMoveTo(x, y, z, fly)
+    running_vnavmesh = true
     IPC.vnavmesh.PathfindAndMoveTo(Vector3(x, y, z), fly)
 end
 

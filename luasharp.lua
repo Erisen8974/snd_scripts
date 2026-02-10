@@ -41,6 +41,22 @@ function make_set(content_type, ...)
     return l
 end
 
+function make_instance_args(ctype, args_table)
+    local Activator_ty = luanet.ctype(Activator)
+    local CreateInstance = get_method_overload(Activator_ty, "CreateInstance",
+        { Type.GetType("System.Type"), Type.GetType("System.Object[]") })
+
+    local args = luanet.make_array(Object, args_table)
+    local arg_array = luanet.make_array(Object, { ctype, args })
+    local instance = CreateInstance:Invoke(nil, arg_array)
+    if arg_array == instance then
+        log_array(args)
+        log_array(arg_array)
+        StopScript("Failed to make instance", CallerName(false), "type:", ctype, "args:", args)
+    end
+    return instance
+end
+
 function deref_pointer(ptr, ctype)
     if Unsafe == nil then
         _, Unsafe = load_type("System.Runtime.CompilerServices.Unsafe", "System.Runtime")
@@ -78,6 +94,35 @@ function load_type(type_path, assembly)
     local type_var = luanet.import_type(type_path)
     log_(LEVEL_VERBOSE, log, "Wrapped type", type_var)
     return type_var, luanet.ctype(type_var)
+end
+
+function load_type_(type_path, assembly)
+    assembly = default(assembly, assembly_name(type_path))
+    local assembly_handle = nil
+    for i in luanet.each(AppDomain.CurrentDomain:GetAssemblies()) do
+        if i.FullName:match(assembly .. ",") then
+            if assembly_handle ~= nil then
+                StopScript("Multiple assemblies found matching name", CallerName(false), "assembly:", assembly)
+            end
+            assembly_handle = i
+        end
+    end
+    if assembly_handle == nil then
+        StopScript("Assembly not found", CallerName(false), "assembly:", assembly)
+    end
+    local type_found = nil
+    for i in luanet.each(assembly_handle.ExportedTypes) do
+        if i.FullName == type_path then
+            if type_found ~= nil then
+                StopScript("Multiple types found matching name", CallerName(false), "type_path:", type_path)
+            end
+            type_found = i
+        end
+    end
+    if type_found == nil then
+        StopScript("Type not found", CallerName(false), "type_path:", type_path)
+    end
+    return type_found
 end
 
 function get_method(type, method_name, binding)

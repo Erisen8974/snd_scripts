@@ -89,12 +89,14 @@ function RunQuesty(max_time)
         local loop_ti = ResetTimeout()
         repeat
             CheckTimeout(10, loop_ti, CallerName(false), "Starting questy")
+            running_questy = true
             yield("/qst start")
             wait(2)
         until IPC.Questionable.IsRunning()
         repeat
             CheckTimeout(max_time, ti, CallerName(false), "Running questy")
             wait(.1)
+            close_yes_no(true, "Allagan Tomestones")
         until not IPC.Questionable.IsRunning()
         local step = IPC.Questionable.GetCurrentStepData()
         log_(LEVEL_DEBUG, log, "Questy step data:", step)

@@ -1,7 +1,8 @@
 require 'utils'
+require 'luasharp'
 
 
-ALL_INVENTORIES = {
+ALL_INVENTORY = {
     InventoryType.Inventory1,
     InventoryType.Inventory2,
     InventoryType.Inventory3,
@@ -32,8 +33,22 @@ ALL_RETAINER = {
     InventoryType.RetainerPage7,
 }
 
+ALL_EQUIPMENT = {
+    InventoryType.EquippedItems,
+    InventoryType.ArmoryHead,
+    InventoryType.ArmoryBody,
+    InventoryType.ArmoryHands,
+    InventoryType.ArmoryLegs,
+    InventoryType.ArmoryFeets,
+    InventoryType.ArmoryEar,
+    InventoryType.ArmoryNeck,
+    InventoryType.ArmoryWrist,
+    InventoryType.ArmoryRings,
+    InventoryType.ArmoryMainHand,
+    InventoryType.ArmoryOffHand,
+}
 
-
+NUM_GEARSETS = 100
 
 item_info_list = {
     -- ARR Maps
@@ -194,16 +209,86 @@ function item_id_range(lowest_item_id, highest_item_id, in_range)
     end
 end
 
+RaptureGearsetModule_GearsetItemIndex = load_type(
+    "FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule+GearsetItemIndex")
+
+function resolve_gearset_ids(number)
+    RaptureGearsetModule = cs_instance("FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule")
+    if not RaptureGearsetModule:IsValidGearset(number) then
+        return nil
+    end
+    if RaptureGearsetModule_GearsetEntry == nil then
+        _, RaptureGearsetModule_GearsetEntry = load_type(
+            "FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule+GearsetEntry")
+    end
+    local gearset_ptr = RaptureGearsetModule:GetGearset(number)
+    if gearset_ptr == nil then
+        return nil
+    end
+    local gs = deref_pointer(gearset_ptr, RaptureGearsetModule_GearsetEntry)
+    return {
+        MainHand = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.MainHand).ItemId,
+        OffHand = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.OffHand).ItemId,
+        Head = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Head).ItemId,
+        Body = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Body).ItemId,
+        Hands = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Hands).ItemId,
+        Legs = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Legs).ItemId,
+        Feet = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Feet).ItemId,
+        Ears = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Ears).ItemId,
+        Neck = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Neck).ItemId,
+        Wrists = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Wrists).ItemId,
+        LeftRing = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.RingLeft).ItemId,
+        RightRing = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.RingRight).ItemId,
+    }
+end
+
+function resolve_gearset_items(number)
+    local gearset_ids = resolve_gearset_ids(number)
+    if gearset_ids == nil then
+        return nil
+    end
+    local items = {}
+    for slot, _ in pairs(gearset_ids) do
+        items[slot] = nil
+    end
+    for _, container in pairs(ALL_EQUIPMENT) do
+        local inv = Inventory.GetInventoryContainer(container)
+        for item in luanet.each(inv.Items) do
+            local itemId = item.ItemId
+            if item.IsHighQuality then
+                itemId = itemId + 1000000
+            end
+            for slot, gid in pairs(gearset_ids) do
+                if itemId == gid then
+                    gearset_ids[slot] = nil
+                    items[slot] = item
+                    break
+                end
+            end
+        end
+    end
+    for slot, gid in pairs(gearset_ids) do
+        if gid ~= nil then
+            log_(LEVEL_ERROR, log, "Did not find item for slot", slot, "with id", gid, "in gearset", number)
+        end
+    end
+    return items
+end
+
 function item_in_gearset(in_gearset)
     in_gearset = default(in_gearset, true)
     return function(item)
-        for gs in luanet.each(Player.Gearsets) do
-            for gsi in luanet.each(gs.Items) do
-                if gsi.ItemId == item.ItemId
-                    and gsi.Slot == item.Slot
-                    and gsi.Container == item.Container
-                then
-                    return in_gearset
+        for idx = 0, NUM_GEARSETS - 1 do
+            gs = resolve_gearset_items(idx)
+            if gs ~= nil then
+                for _, gsi in pairs(gs) do
+                    if gsi.ItemId == item.ItemId
+                        and gsi.Slot == item.Slot
+                        and gsi.Container == item.Container
+                        and gsi.IsHighQuality == item.IsHighQuality
+                    then
+                        return in_gearset
+                    end
                 end
             end
         end

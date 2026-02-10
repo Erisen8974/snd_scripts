@@ -177,14 +177,13 @@ end
 --stage2_range = 49009-49063
 
 function item_is_lunar(item_id)
-    return
-        (45591 <= item_id and item_id <= 45689) or
-        (49009 <= item_id and item_id <= 49063)
+    return item_id_range(45591, 45689)(item_id)
+        or item_id_range(49009, 49063)(item_id)
 end
 
 function move_lunar_weapons()
-    move_items(ALL_INVENTORIES, InventoryType.ArmoryMainHand, 45591, 45689)
-    move_items(ALL_INVENTORIES, InventoryType.ArmoryMainHand, 49009, 49063)
+    move_items(ALL_INVENTORIES, InventoryType.ArmoryMainHand, item_id_range(45591, 45689))
+    move_items(ALL_INVENTORIES, InventoryType.ArmoryMainHand, item_id_range(49009, 49063))
 end
 
 --[[
@@ -275,6 +274,7 @@ known_fissions = {
 
 
 function moon_path_to_fish(fish)
+    running_vnavmesh = true
     if Vector3.Distance(Player.Entity.Position, fish.Fish) < 2 then
         return -- already here
     end
