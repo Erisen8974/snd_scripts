@@ -133,6 +133,10 @@ function get_item_info_by_id(item_id)
     end
 end
 
+function venture_count()
+    return Inventory.GetItemCount(21072)
+end
+
 function equip_gearset(gearset_name, update_after)
     update_after = default(update_after, false)
     local ti = ResetTimeout()
@@ -143,14 +147,14 @@ function equip_gearset(gearset_name, update_after)
                 gs:Equip()
                 wait_ready(10, 1)
             until Player.Gearset.Name == gearset_name
-            log_(LEVEL_INFO, log, "Gearset", gearset_name, "equipped")
+            log_(LEVEL_INFO, _text, "Gearset", gearset_name, "equipped")
             if update_after then
                 Player.Gearset:Update()
             end
             return true
         end
     end
-    log_(LEVEL_ERROR, log, "Gearset", gearset_name, "not found")
+    log_(LEVEL_ERROR, _text, "Gearset", gearset_name, "not found")
     return false
 end
 
@@ -161,7 +165,7 @@ function equip_classjob(classjob_abrev, update_after)
     for gs in luanet.each(Player.Gearsets) do
         if luminia_row_checked("ClassJob", gs.ClassJob).Abbreviation == classjob_abrev then
             gearset_name = gs.Name
-            log_(LEVEL_INFO, log, "Equipping gearset", gearset_name, "for class/job", classjob_abrev)
+            log_(LEVEL_INFO, _text, "Equipping gearset", gearset_name, "for class/job", classjob_abrev)
             repeat
                 CheckTimeout(10, ti, CallerName(false), "Couldnt equip gearset:", gearset_name)
                 gs:Equip()
@@ -175,14 +179,14 @@ function equip_classjob(classjob_abrev, update_after)
                 wait(0.4)
             until Player.Gearset.Name == gearset_name
             wait_ready(10, 1)
-            log_(LEVEL_VERBOSE, log, "Gearset", gearset_name, "equipped")
+            log_(LEVEL_VERBOSE, _text, "Gearset", gearset_name, "equipped")
             if update_after then
                 Player.Gearset:Update()
             end
             return true
         end
     end
-    log_(LEVEL_ERROR, log, "No gearset found for class/job", classjob_abrev)
+    log_(LEVEL_ERROR, _text, "No gearset found for class/job", classjob_abrev)
     return false
 end
 
@@ -226,19 +230,27 @@ function resolve_gearset_ids(number)
         return nil
     end
     local gs = deref_pointer(gearset_ptr, RaptureGearsetModule_GearsetEntry)
+    function _resolve_gearset_ids__get_item_id(slot)
+        local itemId = gs:GetItem(slot).ItemId
+        if itemId == 0 then
+            return nil
+        end
+        return itemId
+    end
+
     return {
-        MainHand = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.MainHand).ItemId,
-        OffHand = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.OffHand).ItemId,
-        Head = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Head).ItemId,
-        Body = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Body).ItemId,
-        Hands = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Hands).ItemId,
-        Legs = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Legs).ItemId,
-        Feet = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Feet).ItemId,
-        Ears = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Ears).ItemId,
-        Neck = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Neck).ItemId,
-        Wrists = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.Wrists).ItemId,
-        LeftRing = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.RingLeft).ItemId,
-        RightRing = gs:GetItem(RaptureGearsetModule_GearsetItemIndex.RingRight).ItemId,
+        MainHand = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.MainHand),
+        OffHand = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.OffHand),
+        Head = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Head),
+        Body = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Body),
+        Hands = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Hands),
+        Legs = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Legs),
+        Feet = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Feet),
+        Ears = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Ears),
+        Neck = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Neck),
+        Wrists = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Wrists),
+        LeftRing = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.RingLeft),
+        RightRing = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.RingRight),
     }
 end
 
@@ -269,7 +281,7 @@ function resolve_gearset_items(number)
     end
     for slot, gid in pairs(gearset_ids) do
         if gid ~= nil then
-            log_(LEVEL_ERROR, log, "Did not find item for slot", slot, "with id", gid, "in gearset", number)
+            log_(LEVEL_ERROR, _text, "Did not find item for slot", slot, "with id", gid, "in gearset", number)
         end
     end
     return items
@@ -325,7 +337,7 @@ function move_items(source_inv, dest_inv, pred)
                             need_move = false
                             wait(0)
                         else
-                            log_(LEVEL_INFO, log, "No space to move item to", dest_inv[dest_idx])
+                            log_(LEVEL_INFO, _text, "No space to move item to", dest_inv[dest_idx])
                             dest_idx = dest_idx + 1
                             if dest_idx <= #dest_inv then
                                 destinv = Inventory.GetInventoryContainer(dest_inv[dest_idx])
@@ -359,7 +371,7 @@ function open_map(map_name, partial_ok)
             if title == "Decipher" then
                 ready = true
             else
-                log_(LEVEL_ERROR, log, "SelectIconString found with unexpected title:", title)
+                log_(LEVEL_ERROR, _text, "SelectIconString found with unexpected title:", title)
                 close_addon("SelectIconString")
             end
         end
@@ -369,7 +381,7 @@ function open_map(map_name, partial_ok)
         end
     until ready
     if not SelectInList(map_name, "SelectIconString", partial_ok) then
-        log_(LEVEL_ERROR, log, "Map", map_name, "not found in map list")
+        log_(LEVEL_ERROR, _text, "Map", map_name, "not found in map list")
         return false
     end
     wait_any_addons("SelectYesno")

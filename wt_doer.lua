@@ -100,23 +100,23 @@ function wt_duty()
     for i = 0, 15 do
         local cell = Player.Bingo:GetWeeklyBingoTaskStatus(i)
         if cell ~= WeeklyBingoTaskStatus.Open then
-            log_debug("Bingo cell", i, "not available", cell)
+            log_(LEVEL_DEBUG, _text, "Bingo cell", i, "not available", cell)
         else
             local duty = Player.Bingo:GetWeeklyBingoOrderDataRow(i)
             local content = wt_pick_duty(duty)
             if content == nil then
-                log("Bingo cell", i, "not supported type", duty.Data, '-', wt_item_name(duty))
+                log_(LEVEL_INFO, _text, "Bingo cell", i, "not supported type", duty.Data, '-', wt_item_name(duty))
             else
                 -- try to do the duty
                 local instance_id = content.TerritoryType.RowId
                 local type, unsync = wt_duty_type(content)
                 if duty_executable(content) then
-                    log("Using:", type, unsync, '-', content.Name, '-', instance_id, '-',
+                    log_(LEVEL_INFO, _text, "Using:", type, unsync, '-', content.Name, '-', instance_id, '-',
                         IPC.AutoDuty.ContentHasPath(instance_id))
                     run_content(type, unsync, instance_id, wt_count)
                     return true
                 else
-                    log("Bingo cell", i, "not executable", duty.Data, '-', wt_item_name(duty))
+                    log_(LEVEL_INFO, _text, "Bingo cell", i, "not executable", duty.Data, '-', wt_item_name(duty))
                 end
             end
         end
@@ -132,7 +132,7 @@ function run_content(type, unsync, instance_id, validate)
         IPC.AutoDuty.Stop()
         InstancedContent.LeaveCurrentContent()
         if os.clock() - s > 60 then
-            log_(LEVEL_ERROR, log, "Failed to queue instance", instance_id, "blacklisting it.")
+            log_(LEVEL_ERROR, _text, "Failed to queue instance", instance_id, "blacklisting it.")
             table.insert(duty_blacklist, instance_id)
             return
         end
@@ -147,7 +147,7 @@ function run_content(type, unsync, instance_id, validate)
         wait(1)
     until IPC.AutoDuty.IsStopped()
     if validate() == pre_validation then
-        log_debug("Duty failed? Still in instance?", Svc.ClientState.TerritoryType, instance_id)
+        log_(LEVEL_DEBUG, _text, "Duty failed? Still in instance?", Svc.ClientState.TerritoryType, instance_id)
         table.insert(duty_blacklist, instance_id)
         if Svc.ClientState.TerritoryType == instance_id then
             InstancedContent.LeaveCurrentContent()
@@ -173,8 +173,8 @@ function setup_content(type, unsync)
         else
             command[3] = support_fill
         end
-        log_(LEVEL_INFO, log, "Setting trust members to")
-        log_(LEVEL_INFO, log_array, command)
+        log_(LEVEL_INFO, _text, "Setting trust members to")
+        log_(LEVEL_INFO, _array, command)
         IPC.AutoDuty.SetConfig("SelectedTrustMembers", command)
     elseif type == "Raids" and unsync then
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Raid")
@@ -191,17 +191,18 @@ function duty_executable(content)
     local instance_id = content.TerritoryType.RowId
     local type, unsync = wt_duty_type(content)
     if not unsync and type ~= "Dungeons" then
-        log_debug("Not supported", content.Name, "type", type, "must be unsynced but allow undersized is", unsync)
+        log_(LEVEL_DEBUG, _text, "Not supported", content.Name, "type", type, "must be unsynced but allow undersized is",
+            unsync)
         return false
     elseif type == "Trials" and content.ClassJobLevelRequired > 70 then
-        log_debug("Not supported", content.Name, "type", type, "dont work well above level 70 but needs",
+        log_(LEVEL_DEBUG, _text, "Not supported", content.Name, "type", type, "dont work well above level 70 but needs",
             content.ClassJobLevelRequired)
         return false
     elseif not IPC.AutoDuty.ContentHasPath(instance_id) then
-        log_debug("Not supported", content.Name, "- No autoduty path")
+        log_(LEVEL_DEBUG, _text, "Not supported", content.Name, "- No autoduty path")
         return false
     elseif list_contains(duty_blacklist, instance_id) then
-        log("Blacklisted duty,", content.Name, '-', instance_id, "has been blacklisted")
+        log_(LEVEL_INFO, _text, "Blacklisted duty,", content.Name, '-', instance_id, "has been blacklisted")
         return false
     end
     return true

@@ -6,6 +6,8 @@ import 'System.Numerics'
 pcall(require, 'private/char_info')
 
 
+SCRIPT_TAG = "[EriSND]"
+
 -----------------------
 -- General Utilities --
 -----------------------
@@ -22,7 +24,7 @@ end
 function pause_pyes()
     pyes_pause_count = default(pyes_pause_count, 0)
     pyes_pause_count = pyes_pause_count + 1
-    get_shared_data("YesAlready.StopRequests", "System.Collections.Generic.HashSet`1[System.String]"):Add("EriSND")
+    get_shared_data("YesAlready.StopRequests", "System.Collections.Generic.HashSet`1[System.String]"):Add(SCRIPT_TAG)
 end
 
 function resume_pyes()
@@ -32,7 +34,7 @@ function resume_pyes()
     pyes_pause_count = pyes_pause_count - 1
     if pyes_pause_count == 0 then
         get_shared_data("YesAlready.StopRequests", "System.Collections.Generic.HashSet`1[System.String]"):Remove(
-            "EriSND")
+            SCRIPT_TAG)
         release_shared_data("YesAlready.StopRequests")
     end
 end
@@ -115,7 +117,7 @@ function close_yes_no(accept, expected_text)
         if expected_text ~= nil then
             local node = GetNodeText("SelectYesno", 1, 2)
             if node == nil or not node:upper():find(expected_text:upper()) then
-                log_debug("Expected yesno text '" .. expected_text .. "' didnt match actual text:", node)
+                log_(LEVEL_DEBUG, _text, "Expected yesno text '" .. expected_text .. "' didnt match actual text:", node)
                 return
             end
         end
@@ -217,10 +219,10 @@ function char_cannonical_name(char)
     if #potential_char == 1 then
         return title_case(potential_char[1])
     elseif #potential_char > 1 then
-        log_debug("Ambiguous character name", char, "candidates:", table.concat(potential_char, ", "))
+        log_(LEVEL_DEBUG, _text, "Ambiguous character name", char, "candidates:", table.concat(potential_char, ", "))
         return title_case(char)
     else
-        log_debug("Unknown character name", char)
+        log_(LEVEL_DEBUG, _text, "Unknown character name", char)
         return title_case(char)
     end
 end
@@ -252,10 +254,10 @@ function change_character(char, world, max_time)
 
     local target = string.format("%s@%s", char, world)
 
-    log_debug("Changing to character", target)
+    log_(LEVEL_DEBUG, _text, "Changing to character", target)
 
     if Player.Entity.Name == char and luminia_row_checked("World", Player.Entity.HomeWorld).Name == world then
-        log_debug("Already on target character", target)
+        log_(LEVEL_DEBUG, _text, "Already on target character", target)
         return
     end
 
@@ -271,16 +273,16 @@ function change_character(char, world, max_time)
         CheckTimeout(max_time, ti, "ZoneTransition", "Waiting for lifestream to finish")
         wait(10)
     until not IPC.Lifestream.IsBusy()
-    log_debug("Lifestream done")
+    log_(LEVEL_DEBUG, _text, "Lifestream done")
 
     repeat
         CheckTimeout(max_time, ti, "ZoneTransition", "Waiting for zone transition to end")
         wait(5)
     until IsPlayerAvailable()
 
-    log_debug("relog done")
+    log_(LEVEL_DEBUG, _text, "relog done")
     wait_ready(max_time, 2)
-    log_debug("Ready!")
+    log_(LEVEL_DEBUG, _text, "Ready!")
 end
 
 function is_busy()
@@ -370,7 +372,8 @@ function GetListElement(menu, index)
         StopScript("Unknown addon", CallerName(false), menu)
     end
     if tostring(n.NodeType):find("Text:") == nil then
-        log_debug("Not a text node", CallerName(false), "NodeType:", n.NodeType, "NodeId:", n.Id, name, menu, index)
+        log_(LEVEL_DEBUG, _text, "Not a text node", CallerName(false), "NodeType:", n.NodeType, "NodeId:", n.Id, name,
+            menu, index)
         return nil
     end
     return n.Text
@@ -403,7 +406,7 @@ function SelectInList(name, menu, partial_ok)
         for i = 0, 21 do
             local entry = GetListElement(menu, i)
             if entry == nil then break end
-            log_debug("List item", entry)
+            log_(LEVEL_DEBUG, _text, "List item", entry)
             local match = entry:upper() == string:upper()
             if not match and partial_ok then
                 match = entry:upper():find(string:upper())
@@ -528,7 +531,7 @@ function StopScript(message, caller, ...)
     if default(running_vnavmesh, false) or default(running_visland, false) or default(running_lifestream, false) or default(running_questy, false) then
         IPC.vnavmesh.Stop()
     end
-    luanet.error(logify(message, ...))
+    luanet.error(_text(message, ...))
 end
 
 function CallerName(string)
@@ -571,29 +574,21 @@ LEVEL_CRITICAL = 1
 
 debug_level = default(debug_level, LEVEL_ERROR)
 
-function log_(level, logger, ...)
+function log_(level, formatter, ...)
+    local msg = SCRIPT_TAG .. formatter(...)
+    if LEVEL_INFO >= level then
+        Dalamud.Log(msg)
+    elseif LEVEL_DEBUG >= level then
+        Dalamud.LogDebug(msg)
+    elseif LEVEL_VERBOSE >= level then
+        Dalamud.LogVerbose(msg)
+    end
     if debug_level >= level then
-        logger(...)
+        Svc.Chat:Print(...)
     end
 end
 
-function log_debug(...)
-    log_(LEVEL_DEBUG, log, ...)
-end
-
-function log_debug_array(...)
-    log_(LEVEL_DEBUG, log_array, ...)
-end
-
-function log_debug_table(...)
-    log_(LEVEL_DEBUG, log_table, ...)
-end
-
-function log_debug_list(...)
-    log_(LEVEL_DEBUG, log_list, ...)
-end
-
-function logify(first, ...)
+function _text(first, ...)
     local rest = table.pack(...)
     local message = tostring(first)
     for i = 1, rest.n do
@@ -603,47 +598,49 @@ function logify(first, ...)
 end
 
 function log(...)
-    local msg = logify(...)
-    Svc.Chat:Print(msg)
-    Dalamud.Log(msg)
+    log_(LEVEL_CRITICAL, _text, ...)
 end
 
-function log_count(list, c)
+function _count(list, c, type)
+    local msg = default(type, 'collection') .. ':'
     for i = 0, c - 1 do
-        log(tostring(i) .. ': ' .. tostring(list[i]))
+        msg = msg .. '\n' .. tostring(i) .. ': ' .. tostring(list[i])
     end
+    return msg
 end
 
-function log_iterable(it)
-    log('---', it, '---')
+function _iterable(it)
+    local msg = '---' .. tostring(it) .. '---'
     for i in luanet.each(it) do
-        log(i)
+        msg = msg .. '\n' .. tostring(i)
     end
-    log('--- end ---')
+    return msg .. '\n--- end ---'
 end
 
-function log_list(list)
+function _list(list)
     local c = list.Count
     if c == nil then
-        log("Not a list (No Count property)", list)
+        return "Not a list (No Count property): " .. tostring(list)
     else
-        log_count(list, c)
+        return _count(list, c, 'list')
     end
 end
 
-function log_array(array)
+function _array(array)
     local c = array.Length
     if c == nil then
-        log("Not a array (No Length property)", array)
+        return "Not an array (No Length property): " .. tostring(array)
     else
-        log_count(array, c)
+        return _count(array, c, 'array')
     end
 end
 
-function log_table(list)
+function _table(list)
+    local msg = 'table:'
     for i, v in pairs(list) do
-        log(tostring(i) .. ': ' .. tostring(v))
+        msg = msg .. '\n' .. tostring(i) .. ': ' .. tostring(v)
     end
+    return msg
 end
 
 -----------------------
@@ -651,27 +648,21 @@ end
 -----------------------
 
 
-global_wait_info = {
-    current_timed_function = nil,
-    current_timed_start = 0
-}
-
 function ResetTimeout()
-    global_wait_info = {
-        current_timed_function = CallerName(),
-        current_timed_start = os.clock()
-    }
-    return global_wait_info
+    return os.clock()
 end
 
-function CheckTimeout(max_duration, wait_info, caller_name, ...)
-    wait_info = default(wait_info, global_wait_info)
-    if wait_info == global_wait_info and CallerName() ~= wait_info.current_timed_function then
-        wait_info = ResetTimeout()
+function CheckTimeout(max_duration, wait_info, context, ...)
+    if wait_info == nil then
+        StopScript("wait_info is nil", CallerName(false), "Must be initialized with ResetTimeout()", "context:",
+            default(context, CallerName(false)), ...)
     end
-    max_duration = default(max_duration, 30)
-    if os.clock() > wait_info.current_timed_start + max_duration then
-        StopScript("Max duration reached", default(caller_name, CallerName(false)), ...)
+    if max_duration == nil then
+        StopScript("max_duration is nil", CallerName(false), "Must be provided", "context:",
+            default(context, CallerName(false)), ...)
+    end
+    if os.clock() > wait_info + max_duration then
+        StopScript("Max duration reached", default(context, CallerName(false)), ...)
     end
 end
 

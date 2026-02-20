@@ -78,10 +78,10 @@ function ice_setting(name, value)
         StopScript("Bad setting name type", CallerName(false), "Settings names are strings, not", type(name), name)
     end
     if type(value) == "boolean" then
-        log_debug("Setting boolean", name, "to", value)
+        log_(LEVEL_DEBUG, _text, "Setting boolean", name, "to", value)
         ice_change_bool(name, value)
     elseif type(value) == "number" then
-        log_debug("Setting string", name, "to", value)
+        log_(LEVEL_DEBUG, _text, "Setting number", name, "to", value)
         ice_change_number(name, value)
     else
         StopScript("Bad setting type", CallerName(false), "Unexpected settings type", type(value), value)
@@ -99,7 +99,7 @@ end
 
 function set_missions(...)
     s = make_set('System.UInt32', ...)
-    log_(LEVEL_DEBUG, log_iterable, s)
+    log_(LEVEL_DEBUG, _iterable, s)
     ice_only_mission(s)
 end
 
@@ -108,7 +108,7 @@ function on_moon()
 end
 
 function return_to_craft()
-    log_(LEVEL_VERBOSE, log, "Craft return? Is crafter:", Player.Job.IsCrafter, "Setting enabled:", RETURN_TO_SPOT)
+    log_(LEVEL_VERBOSE, _text, "Craft return? Is crafter:", Player.Job.IsCrafter, "Setting enabled:", RETURN_TO_SPOT)
     if RETURN_TO_SPOT and Player.Job.IsCrafter then
         move_near_point(start_spot, RETURN_RADIUS)
     end
@@ -117,7 +117,7 @@ end
 function path_to_moon_thing(thing, distance)
     distance = default(distance, 3)
     if not on_moon() then
-        log_(LEVEL_INFO, "Must be on moon to path to moon thing")
+        log_(LEVEL_INFO, _text, "Must be on moon to path to moon thing")
         return false
     end
     local e = get_closest_entity(thing)
@@ -128,7 +128,7 @@ function path_to_moon_thing(thing, distance)
         path_len = path_length(path)
     end
     if path_len >= WALK_THRESHOLD then
-        log_(LEVEL_INFO, log, "Too far away or not found, returning to base")
+        log_(LEVEL_INFO, _text, "Too far away or not found, returning to base")
         Actions.ExecuteAction(42149)
         ZoneTransition()
         e = get_closest_entity(thing, true)
@@ -182,25 +182,24 @@ function item_is_lunar(item_id)
 end
 
 function move_lunar_weapons()
-    move_items(ALL_INVENTORIES, InventoryType.ArmoryMainHand, item_id_range(45591, 45689))
-    move_items(ALL_INVENTORIES, InventoryType.ArmoryMainHand, item_id_range(49009, 49063))
+    move_items(ALL_INVENTORIES, InventoryType.ArmoryMainHand, item_is_lunar)
 end
 
 --[[
     Broken cause gearset.items isnt valid...
     local wep_id = nil
-    log_(LEVEL_VERBOSE, log, "Items for gearset:", gs.Name, gs.BannerIndex, gs.IsValid)
+    log_(LEVEL_VERBOSE, _text, "Items for gearset:", gs.Name, gs.BannerIndex, gs.IsValid)
     for item in luanet.each(gs.Items) do
-        log_(LEVEL_VERBOSE, log, "--", item.ItemId, item.Container)
+        log_(LEVEL_VERBOSE, _text, "--", item.ItemId, item.Container)
         if item.Container == InventoryType.ArmoryMainHand then
             wep_id = item.ItemId
         end
     end
     if wep_id == nil then
-        log_(LEVEL_ERROR, log, "Main hand weapon not in gearset. Assuming not stellar.")
+        log_(LEVEL_ERROR, _text, "Main hand weapon not in gearset. Assuming not stellar.")
         return false
     end
-    log_(LEVEL_DEBUG, log, "Mainhand item id is", wep_id)
+    log_(LEVEL_DEBUG, _text, "Mainhand item id is", wep_id)
 --]]
 
 function turnin_mission()
@@ -280,7 +279,7 @@ function moon_path_to_fish(fish)
     end
     local path = await(IPC.vnavmesh.Pathfind(Player.Entity.Position, fish.Setup, false))
     if path_length(path) > fish.ReturnDist then
-        log_(LEVEL_INFO, log, "Too far away, returning to base")
+        log_(LEVEL_INFO, _text, "Too far away, returning to base")
         Actions.ExecuteAction(42149)
         ZoneTransition()
         path = await(IPC.vnavmesh.Pathfind(Player.Entity.Position, fish.Setup, false))
@@ -307,7 +306,7 @@ function start_fisher_mission(number)
     ice_setting("StopOnceHitCosmoCredits", false)
     ice_setting("StopOnceHitLunarCredits", false)
 
-    log_(LEVEL_INFO, log, "ICE Configured, starting mission")
+    log_(LEVEL_INFO, _text, "ICE Configured, starting mission")
 
     ice_enable()
 
@@ -317,7 +316,7 @@ function start_fisher_mission(number)
 
     ice_disable()
 
-    log_(LEVEL_INFO, log, "ICE started mission, running AH")
+    log_(LEVEL_INFO, _text, "ICE started mission, running AH")
 
     repeat
         IPC.AutoHook.DeleteAllAnonymousPresets()
@@ -380,14 +379,14 @@ function get_lunar_credits()
 end
 
 function do_upkeep()
-    log_(LEVEL_DEBUG, log, "Doing upkeep")
-    log_(LEVEL_DEBUG, log, "GAMBA_TIME:", GAMBA_TIME, "PROCESS_RETAINERS:", PROCESS_RETAINERS)
+    log_(LEVEL_DEBUG, _text, "Doing upkeep")
+    log_(LEVEL_DEBUG, _text, "GAMBA_TIME:", GAMBA_TIME, "PROCESS_RETAINERS:", PROCESS_RETAINERS)
     if GAMBA_TIME > 0 and get_lunar_credits() >= GAMBA_TIME then
-        log_(LEVEL_DEBUG, log, "Starting gamba")
+        log_(LEVEL_DEBUG, _text, "Starting gamba")
         start_gamba()
     end
     if PROCESS_RETAINERS and IPC.AutoRetainer.AreAnyRetainersAvailableForCurrentChara() then
-        log_(LEVEL_DEBUG, log, "Processing retainers")
+        log_(LEVEL_DEBUG, _text, "Processing retainers")
         moon_talk("Summoning Bell")
         repeat
             wait(1)
@@ -398,7 +397,7 @@ function do_upkeep()
 end
 
 function fish_relic(max)
-    log_(LEVEL_DEBUG, log, "Fish relic, Gamba limit:", GAMBA_TIME, "Max research:", max, "Handle retainers:",
+    log_(LEVEL_DEBUG, _text, "Fish relic, Gamba limit:", GAMBA_TIME, "Max research:", max, "Handle retainers:",
         PROCESS_RETAINERS)
     repeat
         do_upkeep()
@@ -407,7 +406,7 @@ function fish_relic(max)
         for t, need in pairs(exp) do
             if need > 0 then
                 ready = false
-                log_(LEVEL_INFO, log, "Need", need, "type", t, "research")
+                log_(LEVEL_INFO, _text, "Need", need, "type", t, "research")
                 if t == 1 or t == 2 then
                     start_fisher_mission(986)
                 elseif t == 3 or t == 4 or t == 5 then
@@ -425,7 +424,7 @@ function fish_relic(max)
 end
 
 function gather_relic(max)
-    log_(LEVEL_DEBUG, log, "Gather relic, Gamba limit:", GAMBA_TIME, "Max research:", max, "Handle retainers:",
+    log_(LEVEL_DEBUG, _text, "Gather relic, Gamba limit:", GAMBA_TIME, "Max research:", max, "Handle retainers:",
         PROCESS_RETAINERS)
     repeat
         local finished, ready, exp = false, false, nil
@@ -438,7 +437,7 @@ function gather_relic(max)
             for t, need in pairs(exp) do
                 if need > 0 then
                     ready = false
-                    log_(LEVEL_INFO, log, "Need", need, "type", t, "research")
+                    log_(LEVEL_INFO, _text, "Need", need, "type", t, "research")
 
                     ice_setting("OnlyGrabMission", false)
                     ice_setting("StopAfterCurrent", true)
@@ -469,7 +468,7 @@ function run_mission(relic_max, gamba_time, process_retainers)
     for t, need in pairs(exp) do
         if need > 0 then
             ready = false
-            log_(LEVEL_INFO, log, "Need", need, "type", t, "research")
+            log_(LEVEL_INFO, _text, "Need", need, "type", t, "research")
 
             ice_setting("OnlyGrabMission", false)
             ice_setting("StopAfterCurrent", true)

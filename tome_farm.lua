@@ -17,18 +17,18 @@ function cap_tomes(weekly_limit, total_limit)
     if weekly_limit == nil then
         local InventoryManager = load_type("FFXIVClientStructs.FFXIV.Client.Game.InventoryManager")
         weekly_limit = InventoryManager.GetLimitedTomestoneWeeklyLimit()
-        log_(LEVEL_INFO, log, "Auto detected weekly limit:", weekly_limit)
+        log_(LEVEL_INFO, _text, "Auto detected weekly limit:", weekly_limit)
     end
     total_limit = default(total_limit, 2000)
 
     local cur_count, cur_week = get_limited_tome_count()
     while cur_count < total_limit and cur_week < weekly_limit do
-        log_(LEVEL_INFO, log, "Running dungeon, tome count:", cur_count, "weekly count:", cur_week)
+        log_(LEVEL_INFO, _text, "Running dungeon, tome count:", cur_count, "weekly count:", cur_week)
         run_content("Dungeons", false, TOME_DUNGEON_ID, get_limited_tome_count)
         cur_count, cur_week = get_limited_tome_count()
     end
 
-    log_(LEVEL_INFO, log, "Finished, tome count:", cur_count, "weekly count:", cur_week)
+    log_(LEVEL_INFO, _text, "Finished, tome count:", cur_count, "weekly count:", cur_week)
 
     if cur_week ~= weekly_limit then
         StopScript("NotCapped", CallerName(false), "Normal tome cap reached before weekly cap", cur_count, cur_week)

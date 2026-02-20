@@ -15,29 +15,29 @@ end
 
 function make_list(content_type, ...)
     local t = Type.GetType(("System.Collections.Generic.List`1[%s]"):format(content_type))
-    log_(LEVEL_VERBOSE, log, "Making list of type", t)
+    log_(LEVEL_VERBOSE, _text, "Making list of type", t)
     local l = Activator.CreateInstance(t)
-    log_(LEVEL_VERBOSE, log, "List made", l)
+    log_(LEVEL_VERBOSE, _text, "List made", l)
     local args = table.pack(...)
     for i = 1, args.n do
         l:Add(args[i])
     end
-    log_(LEVEL_VERBOSE, log, "Initial items added")
-    log_(LEVEL_VERBOSE, log_iterable, l)
+    log_(LEVEL_VERBOSE, _text, "Initial items added")
+    log_(LEVEL_VERBOSE, _iterable, l)
     return l
 end
 
 function make_set(content_type, ...)
     local t = Type.GetType(("System.Collections.Generic.HashSet`1[%s]"):format(content_type))
-    log_(LEVEL_VERBOSE, log, "Making set of type", t)
+    log_(LEVEL_VERBOSE, _text, "Making set of type", t)
     local l = Activator.CreateInstance(t)
-    log_(LEVEL_VERBOSE, log, "Set made", l)
+    log_(LEVEL_VERBOSE, _text, "Set made", l)
     local args = table.pack(...)
     for i = 1, args.n do
         l:Add(args[i])
     end
-    log_(LEVEL_VERBOSE, log, "Initial items added")
-    log_(LEVEL_VERBOSE, log_iterable, l)
+    log_(LEVEL_VERBOSE, _text, "Initial items added")
+    log_(LEVEL_VERBOSE, _iterable, l)
     return l
 end
 
@@ -50,8 +50,8 @@ function make_instance_args(ctype, args_table)
     local arg_array = luanet.make_array(Object, { ctype, args })
     local instance = CreateInstance:Invoke(nil, arg_array)
     if arg_array == instance then
-        log_array(args)
-        log_array(arg_array)
+        log_(LEVEL_CRITICAL, _array, args)
+        log_(LEVEL_CRITICAL, _array, arg_array)
         StopScript("Failed to make instance", CallerName(false), "type:", ctype, "args:", args)
     end
     return instance
@@ -88,11 +88,11 @@ end
 
 function load_type(type_path, assembly)
     assembly = default(assembly, assembly_name(type_path))
-    log_(LEVEL_VERBOSE, log, "Loading assembly", assembly)
+    log_(LEVEL_VERBOSE, _text, "Loading assembly", assembly)
     luanet.load_assembly(assembly)
-    log_(LEVEL_VERBOSE, log, "Wrapping type", type_path)
+    log_(LEVEL_VERBOSE, _text, "Wrapping type", type_path)
     local type_var = luanet.import_type(type_path)
-    log_(LEVEL_VERBOSE, log, "Wrapped type", type_var)
+    log_(LEVEL_VERBOSE, _text, "Wrapped type", type_var)
     return type_var, luanet.ctype(type_var)
 end
 

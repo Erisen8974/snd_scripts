@@ -99,9 +99,9 @@ function RunQuesty(max_time)
             close_yes_no(true, "Allagan Tomestones")
         until not IPC.Questionable.IsRunning()
         local step = IPC.Questionable.GetCurrentStepData()
-        log_(LEVEL_DEBUG, log, "Questy step data:", step)
+        log_(LEVEL_DEBUG, _text, "Questy step data:", step)
         if step ~= nil then
-            log_(LEVEL_ERROR, log, "Questy ended but step data is not nil, restarting questy",
+            log_(LEVEL_ERROR, _text, "Questy ended but step data is not nil, restarting questy",
                 step.TerritoryId, step.QuestId, step.Position, step.InteractionType)
         end
     until step == nil

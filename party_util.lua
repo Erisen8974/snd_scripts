@@ -10,7 +10,7 @@ function party_invite_friend(name)
     local InfoProxyPartyInvite, InfoProxyPartyInvite_ty = load_type(
         "FFXIVClientStructs.FFXIV.Client.UI.Info.InfoProxyPartyInvite")
 
-    log_(LEVEL_DEBUG, log, "Inviting friend", f.Name, "with content ID", f.ContentId, "and home world", f.HomeWorld)
+    log_(LEVEL_DEBUG, _text, "Inviting friend", f.Name, "with content ID", f.ContentId, "and home world", f.HomeWorld)
 
     local instance = InfoProxyPartyInvite.Instance()
     return deref_pointer(instance, InfoProxyPartyInvite_ty):InviteToPartyContentId(f.ContentId, f.HomeWorld)

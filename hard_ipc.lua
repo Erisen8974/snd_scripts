@@ -9,7 +9,7 @@ shared_data_cache = {}
 
 function require_ipc(ipc_signature, result_type, arg_types)
     if ipc_cache_actions[ipc_signature] ~= nil or ipc_cache_functions[ipc_signature] ~= nil then
-        log_(LEVEL_VERBOSE, log, "IPC already loaded", ipc_signature)
+        log_(LEVEL_VERBOSE, _text, "IPC already loaded", ipc_signature)
         return
     end
     arg_types = default(arg_types, {})
@@ -30,10 +30,10 @@ function require_ipc(ipc_signature, result_type, arg_types)
         StopScript("IPC not found", CallerName(false), "signature:", ipc_signature)
     end
     if result_type == nil then
-        log_(LEVEL_DEBUG, log, "loaded action IPC", ipc_signature)
+        log_(LEVEL_DEBUG, _text, "loaded action IPC", ipc_signature)
         ipc_cache_actions[ipc_signature] = subscriber
     else
-        log_(LEVEL_DEBUG, log, "loaded function IPC", ipc_signature)
+        log_(LEVEL_DEBUG, _text, "loaded function IPC", ipc_signature)
         ipc_cache_functions[ipc_signature] = subscriber
     end
 end
@@ -76,12 +76,12 @@ end
 function release_shared_data(tag)
     if tag == nil then
         for t, _ in pairs(shared_data_cache) do
-            log_(LEVEL_VERBOSE, log, "Releasing shared data", t)
+            log_(LEVEL_VERBOSE, _text, "Releasing shared data", t)
             Svc.PluginInterface:RelinquishData(t)
         end
         shared_data_cache = {}
     else
-        log_(LEVEL_VERBOSE, log, "Releasing shared data", tag)
+        log_(LEVEL_VERBOSE, _text, "Releasing shared data", tag)
         Svc.PluginInterface:RelinquishData(tag)
         shared_data_cache[tag] = nil
     end

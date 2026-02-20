@@ -13,9 +13,9 @@ function TownPath(town, x, y, z, shard, dest_town, ...)
     wait_ready(10, 1)
     local current_town = luminia_row_checked("TerritoryType", Svc.ClientState.TerritoryType).PlaceName.Name
     if list_contains(alt_zones, current_town) then
-        log_debug("Already in", current_town)
+        log_(LEVEL_DEBUG, _text, "Already in", current_town)
     else
-        log_debug("Moving to", town, "from", current_town)
+        log_(LEVEL_DEBUG, _text, "Moving to", town, "from", current_town)
         repeat
             yield("/tp " .. tostring(town))
             wait(1)
@@ -27,11 +27,11 @@ function TownPath(town, x, y, z, shard, dest_town, ...)
         local nearest_shard = closest_aethershard()
         local shard_name = luminia_row_checked("Aetheryte", nearest_shard.DataId).AethernetName.Name
         if current_town == dest_town and path_distance_to(Vector3(x, y, z)) < path_distance_to(nearest_shard.Position) then
-            log_debug("Already nearer to", x, y, z, "than to aethernet", shard_name)
+            log_(LEVEL_DEBUG, _text, "Already nearer to", x, y, z, "than to aethernet", shard_name)
         elseif shard_name == shard then
-            log_debug("Nearest shard is already", shard_name)
+            log_(LEVEL_DEBUG, _text, "Nearest shard is already", shard_name)
         else
-            log_debug("Walking to shard", nearest_shard.DataId, shard_name, "to warp to", shard)
+            log_(LEVEL_DEBUG, _text, "Walking to shard", nearest_shard.DataId, shard_name, "to warp to", shard)
             WalkTo(nearest_shard.Position, nil, nil, 7)
             running_lifestream = true
             yield("/li " .. tostring(shard))
@@ -136,17 +136,17 @@ function move_near_point(spot, radius, fly)
     local result, fly_result
     target.Y = target.Y + 0.5
     if fly then
-        log_(LEVEL_DEBUG, log, "Looking for mesh point in range", radius, "of", target)
+        log_(LEVEL_DEBUG, _text, "Looking for mesh point in range", radius, "of", target)
         fly_result = IPC.vnavmesh.NearestPoint(target, radius, radius)
     end
-    log_(LEVEL_DEBUG, log, "Looking for floor point in range", radius, "of", target)
+    log_(LEVEL_DEBUG, _text, "Looking for floor point in range", radius, "of", target)
     result = IPC.vnavmesh.PointOnFloor(target, false, radius)
 
     if result == nil or (fly and fly_result == nil) then
-        log_(LEVEL_ERROR, log, "No valid point found in range", radius, "of", spot, "searched from", target)
+        log_(LEVEL_ERROR, _text, "No valid point found in range", radius, "of", spot, "searched from", target)
         return false
     end
-    log_(LEVEL_DEBUG, log, "Found point in area", result, fly_result)
+    log_(LEVEL_DEBUG, _text, "Found point in area", result, fly_result)
     local path, fly_path
     if fly_result == nil or Vector3.Distance(Player.Entity.Position, result) < FLY_THRESHOLD then
         path = pathfind_with_tolerance(result, false, radius)
@@ -259,7 +259,7 @@ function walk_path(path, fly, range, stop_if_stuck, ref_point)
         end
         if not fly or GetCharacterCondition(4) then
             if stop_if_stuck and Vector3.Distance(last_pos, cur_pos) < stop_if_stuck then
-                log_(LEVEL_ERROR, log, "Antistuck triggered!")
+                log_(LEVEL_ERROR, _text, "Antistuck triggered!")
                 IPC.vnavmesh.Stop()
             end
             last_pos = cur_pos
@@ -291,9 +291,9 @@ end
 function custom_path(fly, waypoints)
     running_vnavmesh = true
     local vec_waypoints = {}
-    log_debug("Setting up")
-    log_debug_table(vec_waypoints)
-    log_debug_table(waypoints)
+    log_(LEVEL_DEBUG, _text, "Setting up")
+    log_(LEVEL_DEBUG, _table, vec_waypoints)
+    log_(LEVEL_DEBUG, _table, "Waypoints:", waypoints)
     for i, waypoint in pairs(waypoints) do
         if type(waypoint) == "table" then
             local x, y, z = table.unpack(waypoint)
@@ -304,21 +304,23 @@ function custom_path(fly, waypoints)
             StopScript("Invalid waypoint type", CallerName(false), "Type:", type(waypoint))
         end
     end
-    log_debug("Calling moveto")
-    log_debug_table(vec_waypoints)
+    log_(LEVEL_DEBUG, _text, "Calling moveto")
+    log_(LEVEL_DEBUG, _table, vec_waypoints)
     local list_waypoints = make_list("System.Numerics.Vector3", table.unpack(vec_waypoints))
-    log_debug(list_waypoints)
-    log_debug_list(list_waypoints)
+    log_(LEVEL_DEBUG, _text, "List waypoints:", list_waypoints)
+    log_(LEVEL_DEBUG, _list, list_waypoints)
     IPC.vnavmesh.MoveTo(list_waypoints, fly)
 end
 
 function xyz_to_vec3(x, y, z)
     if y ~= nil and z ~= nil then
+        log_(LEVEL_VERBOSE, _text, "Converting coordinates to vector3", x, y, z)
         return Vector3(x, y, z)
     elseif y ~= nil or z ~= nil then
         StopScript("Invalid coordinates for WalkTo", CallerName(false), "Must provide either vec3 or x,y,z", "x:", x,
             "y:", y, "z:", z)
     else
+        log_(LEVEL_VERBOSE, _text, "Assuming provided value is already a vector3:", x)
         return x
     end
 end
@@ -329,21 +331,26 @@ function WalkTo(x, y, z, range)
     local ti = ResetTimeout()
     local p
     if range ~= nil then
+        log_(LEVEL_VERBOSE, _text, "Finding path to", pos, "with range", range)
         p = pathfind_with_tolerance(pos, false, range)
     else
+        log_(LEVEL_VERBOSE, _text, "Finding path to", pos)
         p = await(IPC.vnavmesh.Pathfind(Entity.Player.Position, pos, false))
     end
     if p.Count == 0 then
         StopScript("No path found", CallerName(false), "x:", x, "y:", y, "z:", z, "range:", range)
     end
+    log_(LEVEL_VERBOSE, _text, "Walking to", pos, "with range", range)
     IPC.vnavmesh.MoveTo(p, false)
     while (IPC.vnavmesh.IsRunning() or IPC.vnavmesh.PathfindInProgress()) do
         CheckTimeout(30, ti, CallerName(false), "Waiting for pathfind")
         if range ~= nil and Vector3.Distance(Entity.Player.Position, pos) <= range then
+            log_(LEVEL_VERBOSE, _text, "Stopping path because within range", range, "of target")
             IPC.vnavmesh.Stop()
         end
         wait(0.1)
     end
+    log_(LEVEL_VERBOSE, _text, "Arrived at", pos)
 end
 
 function pathfind_with_tolerance(vec3, fly, tolerance)
@@ -366,17 +373,17 @@ function ZoneTransition()
         CheckTimeout(30, ti, "ZoneTransition", "Waiting for zone transition to start")
         wait(0.1)
     until not Player.Entity.IsCasting
-    log_debug("Not casting")
+    log_(LEVEL_DEBUG, _text, "Not casting")
     repeat
         CheckTimeout(30, ti, "ZoneTransition", "Waiting for zone transition to start")
         wait(0.1)
     until not IsPlayerAvailable()
-    log_debug("Teleport started")
+    log_(LEVEL_DEBUG, _text, "Teleport started")
     repeat
         CheckTimeout(30, ti, "ZoneTransition", "Waiting for lifestream to finish")
         wait(0.1)
     until not IPC.Lifestream.IsBusy()
-    log_debug("Lifestream done")
+    log_(LEVEL_DEBUG, _text, "Lifestream done")
     repeat
         CheckTimeout(30, ti, "ZoneTransition", "Waiting for zone transition to end")
         while IPC.vnavmesh.BuildProgress() > 0 do
@@ -385,10 +392,9 @@ function ZoneTransition()
         end
         wait(0.1)
     until IsPlayerAvailable()
-    log_debug("Teleport done")
-
+    log_(LEVEL_DEBUG, _text, "Teleport done")
     wait_ready(30, 2)
-    log_debug("Ready!")
+    log_(LEVEL_DEBUG, _text, "Ready!")
 end
 
 function IsNearThing(thing, distance)

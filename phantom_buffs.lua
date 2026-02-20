@@ -61,11 +61,11 @@ function SetPhantomJob(job_name)
     end
 
     if HasStatusId(job_data.status) then
-        log_debug("Phantom job", job_name, "already set")
+        log_(LEVEL_DEBUG, _text, "Phantom job", job_name, "already set")
         return GetStatusStackCount(job_data.status) & 0xff
     end
 
-    log_debug("Setting phantom job to", job_name, "index:", job_data.index)
+    log_(LEVEL_DEBUG, _text, "Setting phantom job to", job_name, "index:", job_data.index)
     open_addon(MKDSupportJob, MKDInfo, false, 1, 0)
     open_addon(MKDSupportJobList, MKDSupportJob, false, 0, 0, 0)
 
@@ -95,10 +95,10 @@ function ApplyPhantomBuffs()
     for name, data in pairs(global_buffs) do
         if SetPhantomJob(data.job) >= data.min_level then
             wait(1)
-            log_debug("Applying phantom buff", name)
+            log_(LEVEL_DEBUG, _text, "Applying phantom buff", name)
             ApplyPhantomBuff(data.id, data.buff_id)
         else
-            log("Not high enough level for global buff", name, "min level:", data.min_level)
+            log_(LEVEL_ERROR, _text, "Not high enough level for global buff", name, "min level:", data.min_level)
         end
         wait(1)
     end
