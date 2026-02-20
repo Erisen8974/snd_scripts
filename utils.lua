@@ -575,16 +575,17 @@ LEVEL_CRITICAL = 1
 debug_level = default(debug_level, LEVEL_ERROR)
 
 function log_(level, formatter, ...)
-    local msg = SCRIPT_TAG .. formatter(...)
+    local msg = formatter(...)
+    local msg_tagged = SCRIPT_TAG .. " " .. msg
     if LEVEL_INFO >= level then
-        Dalamud.Log(msg)
+        Dalamud.Log(msg_tagged)
     elseif LEVEL_DEBUG >= level then
-        Dalamud.LogDebug(msg)
+        Dalamud.LogDebug(msg_tagged)
     elseif LEVEL_VERBOSE >= level then
-        Dalamud.LogVerbose(msg)
+        Dalamud.LogVerbose(msg_tagged)
     end
     if debug_level >= level then
-        Svc.Chat:Print(...)
+        Svc.Chat:Print(msg)
     end
 end
 
