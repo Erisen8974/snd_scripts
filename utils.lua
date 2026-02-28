@@ -468,10 +468,13 @@ function SafeCallback(addon, update, ...)
         local value = callback_table[i]
         if type(value) == "number" then
             call_command = call_command .. " " .. tostring(value)
+        elseif type(value) == "string" then
+            call_command = call_command .. " \"" .. value .. "\""
         else
-            StopScript("Callbacks have to use numbers!")
+            StopScript("Callbacks have to use numbers or strings!")
         end
     end
+    log_(LEVEL_VERBOSE, _text, "Calling addon with command", call_command)
     if IsAddonReady(addon) then
         yield(call_command)
     end
@@ -534,12 +537,20 @@ function StopScript(message, caller, ...)
     luanet.error(_text(message, ...))
 end
 
+NO_CALL_INFO = true
+
 function CallerName(string)
+    if NO_CALL_INFO then
+        return "(unknown caller)"
+    end
     string = default(string, true)
     return debug_info_tostring(debug.getinfo(3), string)
 end
 
 function FunctionInfo(string)
+    if NO_CALL_INFO then
+        return "(unknown function)"
+    end
     string = default(string, true)
     return debug_info_tostring(debug.getinfo(2), string)
 end
@@ -618,26 +629,26 @@ function _iterable(it)
     return msg .. '\n--- end ---'
 end
 
-function _list(list)
+function _list(list, header)
     local c = list.Count
     if c == nil then
         return "Not a list (No Count property): " .. tostring(list)
     else
-        return _count(list, c, 'list')
+        return _count(list, c, default(header, 'list'))
     end
 end
 
-function _array(array)
+function _array(array, header)
     local c = array.Length
     if c == nil then
         return "Not an array (No Length property): " .. tostring(array)
     else
-        return _count(array, c, 'array')
+        return _count(array, c, default(header, 'array'))
     end
 end
 
-function _table(list)
-    local msg = 'table:'
+function _table(list, header)
+    local msg = default(header, 'table:')
     for i, v in pairs(list) do
         msg = msg .. '\n' .. tostring(i) .. ': ' .. tostring(v)
     end

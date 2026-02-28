@@ -4,6 +4,7 @@ require 'hard_ipc'
 import "System.Numerics"
 import "System"
 
+local SPRINT_THRESHOLD = 10
 local WALK_THRESHOLD = 35
 local FLY_THRESHOLD = 100
 
@@ -17,7 +18,7 @@ function TownPath(town, x, y, z, shard, dest_town, ...)
     else
         log_(LEVEL_DEBUG, _text, "Moving to", town, "from", current_town)
         repeat
-            yield("/tp " .. tostring(town))
+            IPC.Lifestream.ExecuteCommand(tostring(town))
             wait(1)
         until Player.Entity.IsCasting
         ZoneTransition()
@@ -25,16 +26,18 @@ function TownPath(town, x, y, z, shard, dest_town, ...)
 
     if shard ~= nil then
         local nearest_shard = closest_aethershard()
-        local shard_name = luminia_row_checked("Aetheryte", nearest_shard.DataId).AethernetName.Name
-        if current_town == dest_town and path_distance_to(Vector3(x, y, z)) < path_distance_to(nearest_shard.Position) then
+        local shard_pos = nearest_shard.Position
+        local shard_dataid = nearest_shard.DataId
+        local shard_name = luminia_row_checked("Aetheryte", shard_dataid).AethernetName.Name
+        if current_town == dest_town and path_distance_to(Vector3(x, y, z)) < path_distance_to(shard_pos) then
             log_(LEVEL_DEBUG, _text, "Already nearer to", x, y, z, "than to aethernet", shard_name)
         elseif shard_name == shard then
             log_(LEVEL_DEBUG, _text, "Nearest shard is already", shard_name)
         else
-            log_(LEVEL_DEBUG, _text, "Walking to shard", nearest_shard.DataId, shard_name, "to warp to", shard)
-            WalkTo(nearest_shard.Position, nil, nil, 7)
+            log_(LEVEL_DEBUG, _text, "Walking to shard", shard_dataid, shard_name, "to warp to", shard)
+            WalkTo(shard_pos, nil, nil, 7)
             running_lifestream = true
-            yield("/li " .. tostring(shard))
+            IPC.Lifestream.ExecuteCommand(tostring(shard))
             ZoneTransition()
         end
     end
@@ -293,7 +296,7 @@ function custom_path(fly, waypoints)
     local vec_waypoints = {}
     log_(LEVEL_DEBUG, _text, "Setting up")
     log_(LEVEL_DEBUG, _table, vec_waypoints)
-    log_(LEVEL_DEBUG, _table, "Waypoints:", waypoints)
+    log_(LEVEL_DEBUG, _table, waypoints, "Waypoints:")
     for i, waypoint in pairs(waypoints) do
         if type(waypoint) == "table" then
             local x, y, z = table.unpack(waypoint)
@@ -341,7 +344,15 @@ function WalkTo(x, y, z, range)
         StopScript("No path found", CallerName(false), "x:", x, "y:", y, "z:", z, "range:", range)
     end
     log_(LEVEL_VERBOSE, _text, "Walking to", pos, "with range", range)
+    if path_length(p) > SPRINT_THRESHOLD then
+        log_(LEVEL_VERBOSE, _text, "Path is long, sprinting")
+        Actions.ExecuteGeneralAction(4)
+    else
+        log_(LEVEL_VERBOSE, _text, "Path is short, walking normally")
+    end
+
     IPC.vnavmesh.MoveTo(p, false)
+
     while (IPC.vnavmesh.IsRunning() or IPC.vnavmesh.PathfindInProgress()) do
         CheckTimeout(30, ti, CallerName(false), "Waiting for pathfind")
         if range ~= nil and Vector3.Distance(Entity.Player.Position, pos) <= range then
