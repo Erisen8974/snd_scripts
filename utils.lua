@@ -184,6 +184,15 @@ function title_case(str)
     return title
 end
 
+function close_addons(addons)
+    while is_busy() do
+        wait(.1)
+        for _, addon in pairs(addons) do
+            close_addon(addon)
+        end
+    end
+end
+
 ---------------------------------------------------------
 -------- Character utils if char data was loaded --------
 ---------------------------------------------------------
@@ -449,6 +458,14 @@ function list_contains(table, element)
         end
     end
     return false
+end
+
+function table_keys(t)
+    local keys = {}
+    for k, _ in pairs(t) do
+        table.insert(keys, k)
+    end
+    return keys
 end
 
 function SafeCallback(addon, update, ...)
