@@ -68,14 +68,18 @@ end
 
 function toggle_team_member(charnum)
     open_mission()
+    log_(LEVEL_INFO, _text, "Toggling charnum", charnum)
     SafeCallback("GcArmyMemberList", true, 11, charnum)
 end
 
 function select_team_member(charnum)
+    log_(LEVEL_INFO, _text, "Selecting charnum", charnum)
     if not is_team_member_selected(charnum) then
         toggle_team_member(charnum)
     end
+    local ti = ResetTimeout()
     while not is_team_member_selected(charnum) do
+        CheckTimeout(10, ti, CallerName(false), "Waiting for team member selection", charnum)
         wait(.1)
     end
 end
@@ -83,8 +87,11 @@ end
 function set_team(selected_chars)
     for i = 0, 7 do
         if is_team_member_selected(i) and not list_contains(selected_chars, i) then
+            log_(LEVEL_INFO, _text, "Deselecting charnum", i)
             toggle_team_member(i)
+            local ti = ResetTimeout()
             while is_team_member_selected(i) do
+                CheckTimeout(10, ti, CallerName(false), "Waiting for team member deselection", i)
                 wait(.1)
             end
         end
@@ -98,7 +105,9 @@ function is_team_member_selected(charnum)
     open_mission()
     local char_base = 6
     local stat_count = 15
-    return atk_data_checked("GcArmyMemberList", char_base + charnum * stat_count - 1) == "3"
+    local member_info = atk_data_checked("GcArmyMemberList", char_base + charnum * stat_count - 1)
+    log_(LEVEL_DEBUG, _text, "Member info for charnum", charnum, member_info)
+    return is_bit_set(member_info, 1)
 end
 
 function plan_mission()

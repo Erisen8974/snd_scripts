@@ -21,6 +21,15 @@ function wait(duration)
     yield('/wait ' .. string.format("%.1f", duration))
 end
 
+function is_bit_set(value, bitIndex)
+    local mask = 1 << bitIndex
+    local value_num = tonumber(value)
+    local masked = value_num & mask
+    log_(LEVEL_VERBOSE, _text, "Checking bit", bitIndex, "in value", value_num, "with mask", mask, "result:",
+        masked)
+    return masked ~= 0
+end
+
 function pause_pyes()
     pyes_pause_count = default(pyes_pause_count, 0)
     pyes_pause_count = pyes_pause_count + 1
