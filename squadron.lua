@@ -12,6 +12,18 @@ function squad_test()
     close_mission()
 end
 
+function enter_barracks()
+    local company = Player.GrandCompany
+    if company == 1 then
+        TownPath("Limsa Lominsa Lower Decks", 97.2, 40.2, 62.8, "The Aftcastle", "Limsa Lominsa Upper Decks")
+        talk("Entrance to the Barracks", "SelectYesno")
+        close_yes_no(true, "Enter the Barracks")
+        ZoneTransition()
+    else
+        StopScript("Unsupported Grand Company: ", CallerName(false), company, "is not supported")
+    end
+end
+
 function open_mission()
     if not IsAddonReady("GcArmyExpedition") then
         OpenShop("Storm Squadron Sergeant", "GcArmyExpedition", { SelectString = { 1 } })

@@ -111,11 +111,12 @@ end
 
 function talk(who, what_addon)
     what_addon = default(what_addon, "SelectString")
+    local ti = ResetTimeout()
     repeat
-        local entity = Entity.GetEntityByName(who)
-        if entity then
-            entity:Interact()
-        end
+        CheckTimeout(10, ti, CallerName(false), "Talking to", who, "to open addon", what_addon)
+        local entity = get_closest_entity(who)
+        entity:SetAsTarget()
+        entity:Interact()
         wait(.5)
     until IsAddonReady(what_addon)
 end
@@ -179,7 +180,7 @@ function wait_any_addons(...)
 end
 
 function open_retainer_bell()
-    OpenShop("Summoning Bell", "RetainerList")
+    OpenShop("Summoning Bell", { "RetainerList", "SelectString", "RetainerGrid", "RetainerTaskAsk", "Bank" })
     if IPC.AutoRetainer.AreAnyRetainersAvailableForCurrentChara() then
         repeat
             wait(1)
