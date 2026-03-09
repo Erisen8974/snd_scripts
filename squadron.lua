@@ -40,6 +40,12 @@ function pick_gc_mission(tab, number)
     open_mission()
     SafeCallback("GcArmyExpedition", true, 11, tab)
     SafeCallback("GcArmyExpedition", true, 12, number)
+    local ti = ResetTimeout()
+    repeat
+        CheckTimeout(10, ti, CallerName(false), "Picking GC mission", tab, number)
+        wait(0)
+        local inst = cs_instance("FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentGcArmyExpedition")
+    until inst.SelectedTab == tab and inst.SelectedRow == number
 end
 
 function get_mission_req()

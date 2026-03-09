@@ -86,16 +86,29 @@ function assembly_name(inputstr)
     end
 end
 
+LOADED_ASSEMBLIES = {}
+TYPE_CACHE = {}
+
 function load_type(type_path, assembly)
     assembly = default(assembly, assembly_name(type_path))
-    log_(LEVEL_VERBOSE, _text, "Loading assembly", assembly)
-    luanet.load_assembly(assembly)
-    log_(LEVEL_VERBOSE, _text, "Wrapping type", type_path)
-    local type_var = luanet.import_type(type_path)
-    log_(LEVEL_VERBOSE, _text, "Wrapped type", type_var)
+    if not list_contains(LOADED_ASSEMBLIES, assembly) then
+        log_(LEVEL_VERBOSE, _text, "Loading assembly", assembly)
+        luanet.load_assembly(assembly)
+        table.insert(LOADED_ASSEMBLIES, assembly)
+    end
+    if not TYPE_CACHE[type_path] then
+        log_(LEVEL_VERBOSE, _text, "Loading assembly", assembly)
+        luanet.load_assembly(assembly)
+        log_(LEVEL_VERBOSE, _text, "Wrapping type", type_path)
+        local type_var = luanet.import_type(type_path)
+        log_(LEVEL_VERBOSE, _text, "Wrapped type", type_var)
+        TYPE_CACHE[type_path] = type_var
+    end
+    type_var = TYPE_CACHE[type_path]
     return type_var, luanet.ctype(type_var)
 end
 
+--[[ this didnt work...
 function load_type_(type_path, assembly)
     assembly = default(assembly, assembly_name(type_path))
     local assembly_handle = nil
@@ -124,6 +137,7 @@ function load_type_(type_path, assembly)
     end
     return type_found
 end
+--]]
 
 function get_method(type, method_name, binding)
     local method = type:GetMethod(method_name, make_binding_flags(binding))
