@@ -46,3 +46,8 @@ function stylist_update_current_gearset()
         wait(0.5)
     until not invoke_ipc(STYLIST_IS_BUSY)
 end
+
+function stylist_is_busy()
+    require_ipc(STYLIST_IS_BUSY, 'System.Boolean', {})
+    return invoke_ipc(STYLIST_IS_BUSY)
+end

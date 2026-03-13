@@ -26,7 +26,10 @@ end
 
 function open_mission()
     if not IsAddonReady("GcArmyExpedition") then
-        OpenShop("Storm Squadron Sergeant", "GcArmyExpedition", { SelectString = { 1 } })
+        OpenShop("Storm Squadron Sergeant", "GcArmyExpedition", {
+            SelectString = { 1 },
+            GcArmyExpeditionResult = { -1 }
+        })
     end
 
     open_addon("GcArmyMemberList", "GcArmyExpedition", true, 13)
