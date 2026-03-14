@@ -478,6 +478,20 @@ function table_keys(t)
     return keys
 end
 
+function list_concat(...)
+    local result = {}
+    local count = 0
+    local lists = table.pack(...)
+    for i = 1, lists.n do
+        local list = lists[i]
+        for j = 1, #list do
+            result[count + j] = list[j]
+        end
+        count = count + #list
+    end
+    return result
+end
+
 function SafeCallback(addon, update, ...)
     pause_pyes()
     local callback_table = table.pack(...)
