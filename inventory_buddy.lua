@@ -9,6 +9,16 @@ ALL_INVENTORY = {
     InventoryType.Inventory4,
 }
 
+NORMAL_SADDLEBAG = {
+    InventoryType.SaddleBag1,
+    InventoryType.SaddleBag2,
+}
+
+PREMIUM_SADDLEBAG = {
+    InventoryType.PremiumSaddleBag1,
+    InventoryType.PremiumSaddleBag2,
+}
+
 ALL_ARMORY = {
     InventoryType.ArmoryHead,
     InventoryType.ArmoryBody,
@@ -309,12 +319,16 @@ function item_in_gearset(in_gearset)
 end
 
 function move_items(source_inv, dest_inv, pred)
+    if source_inv == nil or dest_inv == nil then
+        StopScript("Source and destination inventories must be provided")
+    end
     if type(source_inv) ~= "table" then
         source_inv = { source_inv }
     end
     if type(dest_inv) ~= "table" then
         dest_inv = { dest_inv }
     end
+    pred = default(pred, function() return true end)
     local source_idx = 1
     local dest_idx = 1
     local destinv = nil

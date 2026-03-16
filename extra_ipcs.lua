@@ -51,3 +51,12 @@ function stylist_is_busy()
     require_ipc(STYLIST_IS_BUSY, 'System.Boolean', {})
     return invoke_ipc(STYLIST_IS_BUSY)
 end
+
+local AUTORETAINER = 'AutoRetainer'
+local AUTORETAINER_GETCONFIG = AUTORETAINER .. '.GetConfig'
+local AUTORETAINER_GETCONFIG_SHUTDOWN = AUTORETAINER_GETCONFIG .. '.ShutdownOnSubExhaustion'
+
+function autoretainer_shutdown()
+    require_ipc(AUTORETAINER_GETCONFIG_SHUTDOWN, 'System.Boolean', {})
+    return invoke_ipc(AUTORETAINER_GETCONFIG_SHUTDOWN)
+end
