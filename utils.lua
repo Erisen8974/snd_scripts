@@ -94,10 +94,6 @@ function open_addon(addon, base_addon, ...)
         SafeCallback(base_addon, ...)
         wait(0.1)
     end
-    while not IsAddonReady(addon) do
-        CheckTimeout(1, ti, CallerName(false), "Waiting for addon ready", addon)
-        wait(0.1)
-    end
 end
 
 function confirm_addon(addon, ...)
@@ -515,7 +511,7 @@ function SafeCallback(addon, update, ...)
             StopScript("Callbacks have to use numbers or strings!")
         end
     end
-    log_(LEVEL_VERBOSE, _text, "Calling addon with command", call_command)
+    log_(LEVEL_DEBUG, _text, "Calling addon with command", call_command)
     if IsAddonReady(addon) then
         yield(call_command)
     end
@@ -534,6 +530,25 @@ function bool_to_string(state, true_string, false_string)
     else
         StopScript("state must be a bool")
     end
+end
+
+function string_to_bool(str, truey_values, falsey_values)
+    str = str:lower()
+    truey_values = default(truey_values, { "true", "on", "yes" })
+    falsey_values = default(falsey_values, { "false", "off", "no" })
+
+    for _, v in pairs(truey_values) do
+        if str == v:lower() then
+            return true
+        end
+    end
+
+    for _, v in pairs(falsey_values) do
+        if str == v:lower() then
+            return false
+        end
+    end
+    StopScript("InvalidBooleanString", CallerName(false), str)
 end
 
 --------------------
