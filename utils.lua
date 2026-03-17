@@ -30,10 +30,29 @@ function is_bit_set(value, bitIndex)
     return masked ~= 0
 end
 
+function __pause_request(pause, name)
+    local set = get_shared_data(name, "System.Collections.Generic.HashSet`1[System.String]")
+    if set == nil then
+        return
+    end
+    if pause then
+        set:Add(SCRIPT_TAG)
+    else
+        set:Remove(SCRIPT_TAG)
+    end
+end
+
+__PAUSE_HANDLES = {
+    "YesAlready.StopRequests",
+    "TextAdvance.StopRequests",
+}
+
 function pause_pyes()
     pyes_pause_count = default(pyes_pause_count, 0)
     pyes_pause_count = pyes_pause_count + 1
-    get_shared_data("YesAlready.StopRequests", "System.Collections.Generic.HashSet`1[System.String]"):Add(SCRIPT_TAG)
+    for _, option in pairs(__PAUSE_HANDLES) do
+        __pause_request(true, option)
+    end
 end
 
 function resume_pyes()
@@ -42,9 +61,10 @@ function resume_pyes()
     end
     pyes_pause_count = pyes_pause_count - 1
     if pyes_pause_count == 0 then
-        get_shared_data("YesAlready.StopRequests", "System.Collections.Generic.HashSet`1[System.String]"):Remove(
-            SCRIPT_TAG)
-        release_shared_data("YesAlready.StopRequests")
+        for _, option in pairs(__PAUSE_HANDLES) do
+            __pause_request(false, option)
+            release_shared_data(option)
+        end
     end
 end
 
@@ -590,6 +610,12 @@ function StopScript(message, caller, ...)
     if default(running_vnavmesh, false) or default(running_visland, false) or default(running_lifestream, false) or default(running_questy, false) then
         IPC.vnavmesh.Stop()
     end
+    if pyes_pause_count ~= nil and pyes_pause_count > 0 then
+        for _, option in pairs(__PAUSE_HANDLES) do
+            __pause_request(false, option)
+        end
+    end
+    release_shared_data()
     luanet.error(_text(message, ...))
 end
 
