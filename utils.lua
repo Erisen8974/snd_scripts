@@ -416,7 +416,6 @@ end
 
 function ListContents(menu)
     menu = default(menu, "ContextMenu")
-    local offsets = ListSelectionType[menu]
     wait_any_addons(menu)
     local list_items = {}
     for i = 0, 21 do

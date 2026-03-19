@@ -97,11 +97,9 @@ function load_type(type_path, assembly)
         table.insert(LOADED_ASSEMBLIES, assembly)
     end
     if not TYPE_CACHE[type_path] then
-        log_(LEVEL_VERBOSE, _text, "Loading assembly", assembly)
-        luanet.load_assembly(assembly)
-        log_(LEVEL_VERBOSE, _text, "Wrapping type", type_path)
+        log_(LEVEL_VERBOSE, _text, "Loading type", type_path)
         local type_var = luanet.import_type(type_path)
-        log_(LEVEL_VERBOSE, _text, "Wrapped type", type_var)
+        log_(LEVEL_VERBOSE, _text, "Loaded type", type_var)
         TYPE_CACHE[type_path] = type_var
     end
     type_var = TYPE_CACHE[type_path]
