@@ -182,7 +182,7 @@ function item_is_lunar(item_id)
 end
 
 function move_lunar_weapons()
-    move_items(ALL_INVENTORIES, InventoryType.ArmoryMainHand, item_is_lunar)
+    move_items(ALL_INVENTORY, InventoryType.ArmoryMainHand, item_is_lunar)
 end
 
 --[[
@@ -274,6 +274,7 @@ known_fissions = {
 
 function moon_path_to_fish(fish)
     running_vnavmesh = true
+    ---@diagnostic disable-next-line: undefined-field
     if Vector3.Distance(Player.Entity.Position, fish.Fish) < 2 then
         return -- already here
     end

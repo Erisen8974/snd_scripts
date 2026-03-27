@@ -201,7 +201,7 @@ function equip_classjob(classjob_abrev, update_after)
 end
 
 function move_to_inventory(item)
-    for _, destination in pairs(ALL_INVENTORIES) do
+    for _, destination in pairs(ALL_INVENTORY) do
         if Inventory.GetInventoryContainer(destination).FreeSlots > 0 then
             item:MoveItemSlot(destination)
             return true

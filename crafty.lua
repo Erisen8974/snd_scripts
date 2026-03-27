@@ -17,19 +17,19 @@ function DoCraft(item_info, amt)
     local id = default(item_info.itemId, 0)
     local before
     if id ~= 0 then
-        before = GetItemCount(id)
+        before = Inventory.GetItemCount(id)
     end
     repeat
         CheckTimeout(10, ti, "DoCraft", item_info.itemName, amt, "not ready to craft")
         wait(1)
     until CouldCraft()
-    ArtisanCraftItem(item_info.recipeId, amt)
+    IPC.Artisan.CraftItem(item_info.recipeId, amt)
     repeat
         CheckTimeout(60 * amt, ti, "DoCraft", item_info.itemName, amt, "did not finish")
         wait(1)
-    until not ArtisanGetEnduranceStatus()
+    until not IPC.Artisan.GetEnduranceStatus()
     if id ~= 0 then
-        if GetItemCount(id) == before then
+        if Inventory.GetItemCount(id) == before then
             log_(LEVEL_INFO, _text, "Craft failed for item", item_info.itemName, "still have", before)
             return false -- item didnt craft
         end
