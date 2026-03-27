@@ -142,7 +142,7 @@ function close_yes_no(accept, expected_text, mandatory)
         if expected_text ~= nil then
             local node = GetNodeText("SelectYesno", 1, 2)
             if node == nil or not node:upper():find(expected_text:upper()) then
-                log_(LEVEL_DEBUG, _text, "Expected yesno text '" .. expected_text .. "' didnt match actual text:", node)
+                log_(LEVEL_DEBUG, _text, "Expected yesno text '" .. expected_text .. "' didn't match actual text:", node)
                 if mandatory then
                     error("Wrong yesno", CallerName(false), "Expected yesno text", expected_text,
                         "did not match actual text", node)
@@ -226,7 +226,7 @@ end
 -------- Character utils if char data was loaded --------
 ---------------------------------------------------------
 
-function char_cannonical_name(char)
+function char_canonical_name(char)
     if char == nil then
         return nil
     end
@@ -272,7 +272,7 @@ function get_char_info(char)
     if private_char_info == nil then
         return nil
     end
-    char = char_cannonical_name(char)
+    char = char_canonical_name(char)
     return private_char_info[char]
 end
 
@@ -287,7 +287,7 @@ end
 function change_character(char, world, max_time)
     max_time = default(max_time, 10 * 60)
     local ti = ResetTimeout()
-    char = char_cannonical_name(char)
+    char = char_canonical_name(char)
     world = title_case(default(world, char_homeworld(char)))
 
     local target = string.format("%s@%s", char, world)
@@ -346,6 +346,7 @@ function wait_ready(max_wait, n_ready, stationary)
                 n_ready)
         end
         wait(1)
+        ---@diagnostic disable-next-line: undefined-field  Vector3.Distance exists....
         if is_busy() or (stationary and Vector3.Distance(p, Entity.Player.Position) > 1) then
             p = Entity.Player.Position
             ready_count = 0
@@ -410,7 +411,7 @@ function GetListElement(menu, index)
         error("Unknown addon", CallerName(false), menu)
     end
     if tostring(n.NodeType):find("Text:") == nil then
-        log_(LEVEL_DEBUG, _text, "Not a text node", CallerName(false), "NodeType:", n.NodeType, "NodeId:", n.Id, name,
+        log_(LEVEL_DEBUG, _text, "Not a text node", CallerName(false), "NodeType:", n.NodeType, "NodeId:", n.Id,
             menu, index)
         return nil
     end
@@ -476,7 +477,7 @@ end
 
 function list_contains(table, element)
     if table == nil then
-        -- A non-existant table does not contain anything
+        -- A non-existent table does not contain anything
         -- This abstraction allows not initializing if there is no items in some uses
         return false
     end
@@ -514,7 +515,7 @@ function SafeCallback(addon, update, ...)
     pause_pyes()
     local callback_table = table.pack(...)
     if type(addon) ~= "string" then
-        error("addonname must be a string")
+        error("addon name must be a string")
     end
     if type(update) == "boolean" then
         update = tostring(update)
@@ -639,13 +640,13 @@ function FunctionInfo(string)
     return debug_info_tostring(debug.getinfo(2), string)
 end
 
-function debug_info_tostring(debuginfo, always_string)
+function debug_info_tostring(debug_info, always_string)
     string = default(string, true)
-    local caller = debuginfo.name
+    local caller = debug_info.name
     if caller == nil and not always_string then
         return nil
     end
-    local file = debuginfo.short_src:gsub('.*\\', '') .. ":" .. debuginfo.currentline
+    local file = debug_info.short_src:gsub('.*\\', '') .. ":" .. debug_info.currentline
     return tostring(caller) .. "(" .. file .. ")"
 end
 
@@ -762,14 +763,17 @@ function CheckTimeout(max_duration, wait_info, context, ...)
     end
 end
 
-function AlertTimeout(max_duration, wait_info, caller_name, ...)
-    wait_info = default(wait_info, global_wait_info)
-    if wait_info == global_wait_info and CallerName() ~= wait_info.current_timed_function then
-        wait_info = ResetTimeout()
+function AlertTimeout(max_duration, wait_info, context, ...)
+    if wait_info == nil then
+        error("wait_info is nil", CallerName(false), "Must be initialized with ResetTimeout()", "context:",
+            default(context, CallerName(false)), ...)
     end
-    max_duration = default(max_duration, 30)
-    if os.clock() > wait_info.current_timed_start + max_duration then
-        log("Max duration reached", default(caller_name, CallerName(false)), ...)
+    if max_duration == nil then
+        error("max_duration is nil", CallerName(false), "Must be provided", "context:",
+            default(context, CallerName(false)), ...)
+    end
+    if os.clock() > wait_info + max_duration then
+        log("Max duration reached", default(context, CallerName(false)), ...)
         return true
     end
     return false
