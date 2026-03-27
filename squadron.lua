@@ -269,10 +269,11 @@ end
 
 function set_retainer_job(retainer, job)
     pause_pyes()
-    TownPath("Limsa Lominsa Lower Decks", -147, 18.2, 18, "Limsa Lominsa Aetheryte Plaza", nil,
-        "Limsa Lominsa Upper Decks")
-    --TownPath("Ul'dah - Steps of Nald", 109, 4.1, -74, "Sapphire Avenue Exchange", "Ul'dah - Steps of Thal")
-    --TownPath("New Gridania", 169, 15.5, -100, "Leatherworkers' Guild & Shaded Bower", "Old Gridania")
+
+    --smart_path("Old Gridania", 169, 15.5, -100)
+    smart_path("Limsa Lominsa Lower Decks", -147, 18.2, 18)
+    --smart_path("Ul'dah - Steps of Thal", 109, 4.1, -74)
+
     OpenShop("Parnell", "SelectString")
     SelectInList("Inquire about retainer jobs.", "SelectString")
     SelectInList("Purchase a copy of Modern Vocation.", "SelectString")

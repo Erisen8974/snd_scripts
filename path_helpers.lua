@@ -8,6 +8,76 @@ local SPRINT_THRESHOLD = 10
 local WALK_THRESHOLD = 35
 local FLY_THRESHOLD = 100
 
+
+-- TODO: pathfind to get accurate distance, can we do that in a zone were not in?
+-- TODO: Option for flight in zones that allow it
+function smart_path(place_name, x, y, z)
+    local mains, nets = load_aether_info()
+    local goal_point = xyz_to_vec3(x, y, z)
+    local nearest_shard = nil
+    local shard_distance = math.maxinteger
+    for _, info in pairs(nets) do
+        if info.TerritoryName == place_name then
+            local dist = Vector3.Distance(info.Position, goal_point)
+            if dist < shard_distance then
+                nearest_shard = info
+                shard_distance = dist
+            end
+        end
+    end
+    local nearest_main = nil
+    local main_distance = math.maxinteger
+    for _, info in pairs(mains) do
+        if info.TerritoryName == place_name then
+            local dist = Vector3.Distance(info.Position, goal_point)
+            if dist < main_distance then
+                nearest_main = info
+                main_distance = dist
+            end
+        end
+    end
+    if nearest_shard == nil then
+        if nearest_main == nil then
+            if luminia_row_checked("TerritoryType", Svc.ClientState.TerritoryType).PlaceName.Name == place_name then
+                log_(LEVEL_INFO, _text, "No shard or main crystal, walking")
+                WalkTo(x, y, z)
+                return
+            end
+            error("NoRoute", CallerName(false), "Could not find any aether crystals or shards in", place_name)
+        end
+        log_(LEVEL_INFO, _text, "No shard, using main crystal to", nearest_main.TerritoryName, "via", nearest_main.Name)
+        TownPath(nearest_main.Name, x, y, z, nil, nearest_main.TerritoryName)
+        return
+    end
+    if shard_distance > main_distance then
+        log_(LEVEL_INFO, _text, "Main crystal closer than any shard moving to", nearest_main.TerritoryName, "via",
+            nearest_main.Name)
+        TownPath(nearest_main.Name, x, y, z, nil, nearest_main.TerritoryName)
+        return
+    end
+    local dest_town = place_name
+    local main_town = nil
+    for _, info in pairs(mains) do
+        if nearest_shard.Group == info.Group then
+            main_town = info.Name
+            break
+        end
+    end
+    local others = {}
+    for _, info in pairs(nets) do
+        if nearest_shard.Group == info.Group and not info.Invisible then
+            if not (info.TerritoryName == dest_town or
+                    info.TerritoryName == main_town or
+                    list_contains(others, info.TerritoryName)) then
+                table.insert(others, info.TerritoryName)
+            end
+        end
+    end
+    log_(LEVEL_INFO, _text, "Aethernet routing to", nearest_shard.Name, "in", dest_town, "via", main_town)
+    log_(LEVEL_DEBUG, _table, others, "Alternate locations")
+    TownPath(main_town, x, y, z, nearest_shard, dest_town, table.unpack(others))
+end
+
 function TownPath(town, x, y, z, shard, dest_town, ...)
     local alt_zones = { town, dest_town, ... }
     dest_town = default(dest_town, town)
@@ -18,6 +88,7 @@ function TownPath(town, x, y, z, shard, dest_town, ...)
     else
         log_(LEVEL_DEBUG, _text, "Moving to", town, "from", current_town)
         repeat
+            running_lifestream = true
             IPC.Lifestream.ExecuteCommand(tostring(town))
             wait(1)
         until Player.Entity.IsCasting
@@ -25,20 +96,31 @@ function TownPath(town, x, y, z, shard, dest_town, ...)
     end
 
     if shard ~= nil then
-        local nearest_shard = closest_aethershard()
-        local shard_pos = nearest_shard.Position
-        local shard_dataid = nearest_shard.DataId
-        local shard_name = luminia_row_checked("Aetheryte", shard_dataid).AethernetName.Name
-        if current_town == dest_town and path_distance_to(Vector3(x, y, z)) < path_distance_to(shard_pos) then
-            log_(LEVEL_DEBUG, _text, "Already nearer to", x, y, z, "than to aethernet", shard_name)
-        elseif shard_name == shard then
-            log_(LEVEL_DEBUG, _text, "Nearest shard is already", shard_name)
-        else
-            log_(LEVEL_DEBUG, _text, "Walking to shard", shard_dataid, shard_name, "to warp to", shard)
-            WalkTo(shard_pos, nil, nil, 7)
-            running_lifestream = true
-            IPC.Lifestream.ExecuteCommand(tostring(shard))
-            ZoneTransition()
+        if type(shard) ~= "table" then
+            local _, shards = load_aether_info()
+            for _, info in pairs(shards) do
+                if info.Name == shard then
+                    shard = info
+                    break
+                end
+            end
+        end
+        local nearest_shard = closest_aether_group_member(shard.Group)
+        if nearest_shard ~= nil then
+            local shard_pos = nearest_shard.Position
+            local shard_dataid = nearest_shard.DataId
+            local shard_name = luminia_row_checked("Aetheryte", shard_dataid).AethernetName.Name
+            if current_town == dest_town and path_distance_to(Vector3(x, y, z)) < path_distance_to(shard_pos) then
+                log_(LEVEL_DEBUG, _text, "Already nearer to", x, y, z, "than to aethernet", shard_name)
+            elseif shard_name == shard.Name then
+                log_(LEVEL_DEBUG, _text, "Nearest shard is already", shard_name)
+            else
+                log_(LEVEL_DEBUG, _text, "Walking to shard", shard_dataid, shard_name, "to warp to", shard.Name)
+                WalkTo(shard_pos, nil, nil, 7)
+                running_lifestream = true
+                IPC.Lifestream.ExecuteCommand(tostring(shard.Name))
+                ZoneTransition()
+            end
         end
     end
 
@@ -48,7 +130,7 @@ end
 local aether_info = nil
 local net_info = nil
 function load_aether_info()
-    if aether_info == nil then
+    if aether_info == nil or net_info == nil then
         local t = os.clock()
         aether_info = {}
         net_info = {}
@@ -65,7 +147,9 @@ function load_aether_info()
                         AetherId = row.RowId,
                         Name = row.PlaceName.Name,
                         TerritoryId = row.Territory.RowId,
-                        Position = Instances.Telepo:GetAetherytePosition(r)
+                        TerritoryName = row.Territory.PlaceName.Name,
+                        Position = Instances.Telepo:GetAetherytePosition(r),
+                        Group = row.AethernetGroup,
                     }
                 end
                 if row.AethernetName.RowId ~= 0 then
@@ -73,8 +157,9 @@ function load_aether_info()
                         Group = row.AethernetGroup,
                         Name = row.AethernetName.Name,
                         TerritoryId = row.Territory.RowId,
+                        TerritoryName = row.Territory.PlaceName.Name,
                         Position = Instances.Telepo:GetAetherytePosition(r),
-                        Invisible = row.Invisible
+                        Invisible = row.Invisible,
                     }
                 end
             end
@@ -484,6 +569,10 @@ function get_closest_entity(name, critical)
     return EntityWrapper(closest)
 end
 
+function closest_aether_group_member(group)
+    return raw_closest_thing(aether_group(group), path_dist_to_obj(Player.CanFly))
+end
+
 function closest_aethershard(critical)
     critical = default(critical, true)
     local closest = raw_closest_thing(is_aethershard, path_dist_to_obj(Player.CanFly))
@@ -564,6 +653,15 @@ function is_aethershard(obj)
         SvcObjectsKind = load_type("Dalamud.Game.ClientState.Objects.Enums.ObjectKind")
     end
     return obj.ObjectKind == SvcObjectsKind.Aetheryte
+end
+
+function aether_group(group)
+    return function(obj)
+        if not is_aethershard(obj) then return false end
+        _, shards = load_aether_info()
+        local shard = shards[obj.DataId]
+        return shard ~= nil and shard.Group == group
+    end
 end
 
 function xz_to_floor(X, Z)

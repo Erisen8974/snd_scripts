@@ -672,7 +672,7 @@ debug_level = default(debug_level, LEVEL_ERROR)
 
 function log_(level, formatter, ...)
     local msg = formatter(...)
-    local msg_tagged = SCRIPT_TAG .. " " .. msg
+    local msg_tagged = SCRIPT_TAG .. " " .. msg:gsub('\n', '\n' .. SCRIPT_TAG .. " ")
     if LEVEL_INFO >= level then
         Dalamud.Log(msg_tagged)
     elseif LEVEL_DEBUG >= level then
