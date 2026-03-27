@@ -52,7 +52,7 @@ function make_instance_args(ctype, args_table)
     if arg_array == instance then
         log_(LEVEL_CRITICAL, _array, args)
         log_(LEVEL_CRITICAL, _array, arg_array)
-        StopScript("Failed to make instance", CallerName(false), "type:", ctype, "args:", args)
+        error("Failed to make instance", CallerName(false), "type:", ctype, "args:", args)
     end
     return instance
 end
@@ -63,12 +63,12 @@ function deref_pointer(ptr, ctype)
     end
     local AsRef = get_generic_method(Unsafe, "AsRef", { ctype })
     if AsRef == nil or AsRef.Invoke == nil then
-        StopScript("Failed to get AsRef method", CallerName(false), "ctype:", ctype)
+        error("Failed to get AsRef method", CallerName(false), "ctype:", ctype)
     end
     local arg = luanet.make_array(Object, { ptr })
     local ref = AsRef:Invoke(nil, arg)
     if ref == arg then
-        StopScript("Failed to deref pointer", CallerName(false), "pointer:", ptr, "ctype:", ctype)
+        error("Failed to deref pointer", CallerName(false), "pointer:", ptr, "ctype:", ctype)
     end
     return ref
 end
@@ -140,7 +140,7 @@ end
 function get_method(type, method_name, binding)
     local method = type:GetMethod(method_name, make_binding_flags(binding))
     if method == nil then
-        StopScript("Method not found", CallerName(false), "type:", type, "method_name:", method_name)
+        error("Method not found", CallerName(false), "type:", type, "method_name:", method_name)
     end
     return method
 end
@@ -148,7 +148,7 @@ end
 function get_field(type, field_name, binding)
     local field = type:GetField(field_name, make_binding_flags(binding))
     if field == nil then
-        StopScript("Field not found", CallerName(false), "type:", type, "field_name:", field_name)
+        error("Field not found", CallerName(false), "type:", type, "field_name:", field_name)
     end
     return field
 end
@@ -156,7 +156,7 @@ end
 function get_property(type, property_name, binding)
     local property = type:GetProperty(property_name, make_binding_flags(binding))
     if property == nil then
-        StopScript("Property not found", CallerName(false), "type:", type, "property_name:", property_name)
+        error("Property not found", CallerName(false), "type:", type, "property_name:", property_name)
     end
     return property
 end
@@ -292,7 +292,7 @@ function get_generic_method(targetType, method_name, genericTypes)
             return m:MakeGenericMethod(genericArgsArr)
         end
     end
-    StopScript("No generic method found", CallerName(false), "No matching generic method found for", method_name, "with",
+    error("No generic method found", CallerName(false), "No matching generic method found for", method_name, "with",
         #genericTypes, "generic args")
 end
 
@@ -316,6 +316,6 @@ function get_method_overload(targetType, method_name, paramTypes)
             end
         end
     end
-    StopScript("No method overload found", CallerName(false), "No matching overload found for", method_name, "with",
+    error("No method overload found", CallerName(false), "No matching overload found for", method_name, "with",
         #paramTypes, "parameters")
 end

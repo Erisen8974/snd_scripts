@@ -57,7 +57,7 @@ function SetPhantomJob(job_name)
     local ti = ResetTimeout()
     local job_data = phantom_jobbies[job_name]
     if job_data == nil then
-        StopScript("bad name", CallerName(false), "Unknown phantom job", job_name)
+        error("bad name", CallerName(false), "Unknown phantom job", job_name)
     end
 
     if HasStatusId(job_data.status) then
@@ -83,7 +83,7 @@ function ApplyPhantomBuffs()
     local base_job, _ = DeterminePhantomJob()
 
     if base_job == nil then
-        StopScript("No phantom job set", CallerName(false), "Probably not in instance")
+        error("No phantom job set", CallerName(false), "Probably not in instance")
     end
 
     local global_buffs = {

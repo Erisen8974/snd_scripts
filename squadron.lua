@@ -27,7 +27,7 @@ function enter_barracks()
         close_yes_no(true, "Enter the Barracks")
         ZoneTransition()
     else
-        StopScript("Unsupported Grand Company: ", CallerName(false), company, "is not supported")
+        error("Unsupported Grand Company: ", CallerName(false), company, "is not supported")
     end
 end
 
@@ -52,7 +52,7 @@ end
 function pick_gc_tab(tab)
     open_mission_list()
     if tab >= 3 then
-        StopScript("BadTabNumber", CallerName(false), "tab", tab)
+        error("BadTabNumber", CallerName(false), "tab", tab)
     end
     local ti = ResetTimeout()
     local _click = 0
@@ -70,7 +70,7 @@ function pick_gc_mission(number)
     open_mission_list()
     local mission_count = tonumber(atk_data_checked("GcArmyExpedition", 6))
     if number >= mission_count then
-        StopScript("BadMission", CallerName(false), "number", number, "available", mission_count)
+        error("BadMission", CallerName(false), "number", number, "available", mission_count)
     end
     local ti = ResetTimeout()
     local _click = 0
@@ -102,13 +102,13 @@ end
 function is_gc_mission_available(number)
     open_mission_list()
     if not IsAddonReady("GcArmyExpedition") then
-        StopScript("AddonNotReady", CallerName(false), "GcArmyExpedition")
+        error("AddonNotReady", CallerName(false), "GcArmyExpedition")
     end
     local mission_base = 8
     local info_count = 4
     local available = tonumber(atk_data_checked("GcArmyExpedition", 6))
     if number >= available then
-        StopScript("BadMission", CallerName(false), "number", number, "available", available)
+        error("BadMission", CallerName(false), "number", number, "available", available)
     end
     local status = atk_data_checked("GcArmyExpedition", mission_base + number * info_count)
     return string_to_bool(status)
@@ -246,3 +246,57 @@ function plan_mission()
 
     return selected_chars
 end
+
+--#region Misc Retainers stuff
+-- Are retainers like a squadron?
+-- not really...
+
+function set_retainer_jobs(job)
+    local info = get_char_info(Player.Entity.Name)
+    if info ~= nil then
+        local retainers = info.Retainers
+        if retainers == nil then
+            error("Retainers Error", CallerName(false), "no retainer info defined for",
+                Player.Entity.Name)
+        end
+        for i, r in ipairs(retainers) do
+            set_retainer_job(r, job)
+        end
+        return
+    end
+    error("Char Error", CallerName(false), "no char info defined for", Player.Entity.Name)
+end
+
+function set_retainer_job(retainer, job)
+    pause_pyes()
+    TownPath("Limsa Lominsa Lower Decks", -147, 18.2, 18, "Limsa Lominsa Aetheryte Plaza", nil,
+        "Limsa Lominsa Upper Decks")
+    --TownPath("Ul'dah - Steps of Nald", 109, 4.1, -74, "Sapphire Avenue Exchange", "Ul'dah - Steps of Thal")
+    --TownPath("New Gridania", 169, 15.5, -100, "Leatherworkers' Guild & Shaded Bower", "Old Gridania")
+    OpenShop("Parnell", "SelectString")
+    SelectInList("Inquire about retainer jobs.", "SelectString")
+    SelectInList("Purchase a copy of Modern Vocation.", "SelectString")
+    close_yes_no(true, "Exchange 40 ventures", true)
+    close_talk()
+    open_retainer_bell()
+    open_retainer(retainer)
+    if SelectInList("venture report", "SelectString", true) then
+        open_addon("SelectYesno", "RetainerTaskResult", true, 13)
+        close_yes_no(true, "Cancel venture", true)
+    end
+    SelectInList("Assign retainer a job.", "SelectString")
+    SelectInList(job .. '.', "SelectString")
+    resume_pyes()
+    close_yes_no(true, "Modern Vocation", true)
+    wait_any_addons("SelectString")
+    pause_pyes()
+    SelectInList("Assign venture.", "SelectString")
+    SelectInList("Quick Exploration.", "SelectString")
+    open_addon("SelectString", "RetainerTaskAsk", true, 12)
+    close_retainer()
+    close_addon("RetainerList")
+    resume_pyes()
+    IPC.AutoRetainer.SetSuppressed(false)
+end
+
+--#endregion

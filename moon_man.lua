@@ -75,7 +75,7 @@ end
 --]]
 function ice_setting(name, value)
     if type(name) ~= "string" then
-        StopScript("Bad setting name type", CallerName(false), "Settings names are strings, not", type(name), name)
+        error("Bad setting name type", CallerName(false), "Settings names are strings, not", type(name), name)
     end
     if type(value) == "boolean" then
         log_(LEVEL_DEBUG, _text, "Setting boolean", name, "to", value)
@@ -84,7 +84,7 @@ function ice_setting(name, value)
         log_(LEVEL_DEBUG, _text, "Setting number", name, "to", value)
         ice_change_number(name, value)
     else
-        StopScript("Bad setting type", CallerName(false), "Unexpected settings type", type(value), value)
+        error("Bad setting type", CallerName(false), "Unexpected settings type", type(value), value)
     end
 end
 
@@ -252,7 +252,7 @@ function report_research_safe()
     local need_swap = is_moon_tool_equiped()
     if need_swap then
         if not equip_some_other_job(initial_gs) then
-            StopScript("No Other Job", CallerName(false),
+            error("No Other Job", CallerName(false),
                 "Need to change gearset to hand in tool but no gearsets for other jobs were found")
         end
     end
@@ -291,7 +291,7 @@ end
 
 function start_fisher_mission(number)
     if ice_current_state() ~= "Idle" then
-        StopScript("Invalid State", CallerName(false), "ICE should be idle to initialize proplerly")
+        error("Invalid State", CallerName(false), "ICE should be idle to initialize proplerly")
     end
     set_missions(number)
 
@@ -344,7 +344,7 @@ function get_relic_exp(max)
     open_addon("WKSToolCustomize", "WKSHud", true, 15)
     local addon = Addons.GetAddon("WKSToolCustomize")
     if not addon.Exists or not addon.Ready then
-        StopScript("No WKS Tool", CallerName(false), "Failed to get the research screen")
+        error("No WKS Tool", CallerName(false), "Failed to get the research screen")
     end
     local completed = true
     local EXP_COUNT = 5
@@ -372,7 +372,7 @@ end
 function get_lunar_credits()
     local addon = Addons.GetAddon("WKSHud")
     if not addon.Exists or not addon.Ready then
-        StopScript("No WKS Hud", CallerName(false), "Failed to get the HUD")
+        error("No WKS Hud", CallerName(false), "Failed to get the HUD")
     end
 
     return tonumber(addon:GetAtkValue(6).ValueString)
@@ -412,7 +412,7 @@ function fish_relic(max)
                 elseif t == 3 or t == 4 or t == 5 then
                     start_fisher_mission(988)
                 else
-                    StopScript("Bad State", CallerName(false), "Unexpected research type", t)
+                    error("Bad State", CallerName(false), "Unexpected research type", t)
                 end
                 break
             end

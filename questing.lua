@@ -36,7 +36,7 @@ function move_to_quest_giver(path)
     if Svc.ClientState.TerritoryType ~= path.TerritoryId then
         local a = nearest_aetherite(path.TerritoryId, path.Position)
         if a == nil then
-            StopScript("NoAetheryte", CallerName(false), "No aetherite found for", path.TerritoryId)
+            error("NoAetheryte", CallerName(false), "No aetherite found for", path.TerritoryId)
         end
         repeat
             Instances.Telepo:Teleport(a.AetherId, 0) -- IDK what the sub index is. if things break its probably that.
@@ -60,7 +60,7 @@ function GetBeastTribeQuest(path, n, class, one_per)
         elseif path.Category == CATEGORY_CRAFTING then
             class = DEFAULT_CRAFT
         else
-            StopScript("NoClass", CallerName(false), "No class specified in call or path")
+            error("NoClass", CallerName(false), "No class specified in call or path")
         end
     end
     yield("/at y")

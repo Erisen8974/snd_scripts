@@ -50,11 +50,11 @@ end
 function GetNodeText(name, ...)
     local a = Addons.GetAddon(name)
     if not a.Ready then
-        StopScript("Bad addon", CallerName(false), name)
+        error("Bad addon", CallerName(false), name)
     end
     local n = a:GetNode(...)
     if tostring(n.NodeType):find("Text:") == nil then
-        StopScript("Not a text node", CallerName(false), "NodeType:", n.NodeType, "NodeId:", n.Id, name, ...)
+        error("Not a text node", CallerName(false), "NodeType:", n.NodeType, "NodeId:", n.Id, name, ...)
     end
     return n.Text
 end

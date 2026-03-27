@@ -68,7 +68,7 @@ function get_wt()
         "Going to Khloe")
 
     if Player.Bingo.HasWeeklyBingoJournal and not Player.Bingo.IsWeeklyBingoExpired then
-        StopScript("AlreadyHaveWT", CallerName(false),
+        error("AlreadyHaveWT", CallerName(false),
             "Weekly Bingo Journal already exists and is not expired, turn in first")
     end
 
@@ -183,7 +183,7 @@ function setup_content(type, unsync)
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Trial")
         IPC.AutoDuty.SetConfig("Unsynced", "True")
     else
-        StopScript("NotImplemented", CallerName(false), "Duty type", type, unsync, "not configured")
+        error("NotImplemented", CallerName(false), "Duty type", type, unsync, "not configured")
     end
 end
 
@@ -211,7 +211,7 @@ end
 function get_duty_row(duty_id)
     local duty = Excel.GetRow("InstanceContent", duty_id)
     if duty == nil then
-        return StopScript("InvalidDuty", CallerName(false), "no duty with ID", duty_id)
+        return error("InvalidDuty", CallerName(false), "no duty with ID", duty_id)
     end
     return duty.ContentFinderCondition
 end
@@ -219,7 +219,7 @@ end
 function get_content_row(content_id)
     local duty = Excel.GetRow("TerritoryType", content_id)
     if duty == nil then
-        return StopScript("InvalidDuty", CallerName(false), "no duty with territory ID", content_id)
+        return error("InvalidDuty", CallerName(false), "no duty with territory ID", content_id)
     end
     return duty.ContentFinderCondition
 end
@@ -237,7 +237,7 @@ function wt_pick_high_level_duty(level)
     elseif level == 100 then
         return get_content_row(1266) --The Underkeep
     end
-    StopScript("NotImplemented", nil, "High level duty Lv.", level, "is not implemented")
+    error("NotImplemented", nil, "High level duty Lv.", level, "is not implemented")
 end
 
 function wt_pick_leveling_duty(level)
@@ -248,7 +248,7 @@ function wt_pick_leveling_duty(level)
     elseif level == 81 then
         return get_content_row(952)  -- Tower of Zot
     end
-    StopScript("NotImplemented", nil, "Leveling duty Lv.", level, "is not implemented")
+    error("NotImplemented", nil, "Leveling duty Lv.", level, "is not implemented")
 end
 
 function extract_level(duty)
@@ -301,7 +301,7 @@ function raid_id_to_duty(raid_id)
         -- Edens Promise
         return get_content_row(943) -- Litany
     end
-    StopScript("NotImplemented", nil, "Raid", raid_id, "is not implemented")
+    error("NotImplemented", nil, "Raid", raid_id, "is not implemented")
 end
 
 -- I dont think they use most of these anymore, so just crash and implement it when they come up.
@@ -314,7 +314,7 @@ function wt_pick_duty(duty)
         return wt_pick_high_level_duty(extract_level(duty))
     elseif duty.Type == 2 then
         -- X1-X9 dungeons, Data == X9
-        StopScript("NotImplemented")
+        error("NotImplemented")
     elseif duty.Type == 3 then
         -- Special (PvP, treasure, etc.)
         return nil
@@ -329,13 +329,13 @@ function wt_pick_duty(duty)
         return wt_pick_high_level_duty(extract_level(duty))
     elseif duty.Type == 7 then
         -- X0-Y0 Trials, Data == Y0
-        StopScript("NotImplemented")
+        error("NotImplemented")
     elseif duty.Type == 8 then
         -- X0-Y0 Alliance Raids, Data == Y0
-        StopScript("NotImplemented")
+        error("NotImplemented")
     elseif duty.Type == 9 then
         -- X0-Y0 Normal Raids, Data == Y0
-        StopScript("NotImplemented")
+        error("NotImplemented")
     end
 end
 

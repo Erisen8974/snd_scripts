@@ -4,7 +4,7 @@ require 'utils'
 function party_invite_friend(name)
     local f = Instances.FriendsList:GetFriendByName(name)
     if f == nil then
-        StopScript("NoSuchFriend", CallerName(), "No friend with name", name)
+        error("NoSuchFriend", CallerName(), "No friend with name", name)
     end
 
     local InfoProxyPartyInvite, InfoProxyPartyInvite_ty = load_type(

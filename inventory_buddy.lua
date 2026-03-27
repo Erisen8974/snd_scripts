@@ -130,7 +130,7 @@ end
 function get_item_info(item_name)
     local item_info = item_info_list[normalize_item_name(item_name)]
     if item_info == nil then
-        StopScript("No information for item", item_name)
+        error("No information for item", item_name)
     end
     return item_info
 end
@@ -264,37 +264,49 @@ function resolve_gearset_ids(number)
     }
 end
 
+-- dont preserve too long cause it can change, but its a little slow to generate
+_GEARSET_CACHE = {}
+_GEARSET_LAST_UPDATE = os.clock()
+
+
 function resolve_gearset_items(number)
-    local gearset_ids = resolve_gearset_ids(number)
-    if gearset_ids == nil then
-        return nil
+    if _GEARSET_LAST_UPDATE + 10 <= os.clock() then
+        _GEARSET_CACHE = {}
+        _GEARSET_LAST_UPDATE = os.clock()
     end
-    local items = {}
-    for slot, _ in pairs(gearset_ids) do
-        items[slot] = nil
-    end
-    for _, container in pairs(ALL_EQUIPMENT) do
-        local inv = Inventory.GetInventoryContainer(container)
-        for item in luanet.each(inv.Items) do
-            local itemId = item.ItemId
-            if item.IsHighQuality then
-                itemId = itemId + 1000000
-            end
-            for slot, gid in pairs(gearset_ids) do
-                if itemId == gid then
-                    gearset_ids[slot] = nil
-                    items[slot] = item
-                    break
+    if _GEARSET_CACHE[number] == nil then
+        local gearset_ids = resolve_gearset_ids(number)
+        if gearset_ids == nil then
+            return nil
+        end
+        local items = {}
+        for slot, _ in pairs(gearset_ids) do
+            items[slot] = nil
+        end
+        for _, container in pairs(ALL_EQUIPMENT) do
+            local inv = Inventory.GetInventoryContainer(container)
+            for item in luanet.each(inv.Items) do
+                local itemId = item.ItemId
+                if item.IsHighQuality then
+                    itemId = itemId + 1000000
+                end
+                for slot, gid in pairs(gearset_ids) do
+                    if itemId == gid then
+                        gearset_ids[slot] = nil
+                        items[slot] = item
+                        break
+                    end
                 end
             end
         end
-    end
-    for slot, gid in pairs(gearset_ids) do
-        if gid ~= nil then
-            log_(LEVEL_ERROR, _text, "Did not find item for slot", slot, "with id", gid, "in gearset", number)
+        for slot, gid in pairs(gearset_ids) do
+            if gid ~= nil then
+                log_(LEVEL_ERROR, _text, "Did not find item for slot", slot, "with id", gid, "in gearset", number)
+            end
         end
+        _GEARSET_CACHE[number] = items
     end
-    return items
+    return _GEARSET_CACHE[number]
 end
 
 function item_in_gearset(in_gearset)
@@ -320,23 +332,34 @@ end
 
 function restock_crystals(target)
     local need_restock = false
+    local can_restock = false
     for slot = 0, 17 do
         if Inventory.GetInventoryItemBySlot(InventoryType.Crystals, slot).Count < target then
             need_restock = true
-            break
+            if Inventory.GetInventoryItemBySlot(InventoryType.Crystals, slot).Count > 0 then
+                can_restock = true
+            end
         end
     end
+
     if not need_restock then
         return true
     end
-    --TODO: open inv or assume its open already?
-    -- probably assume the retainer is open but open the retainer inv here
+
+    if not can_restock then
+        return false
+    end
+
+    open_addon("InventoryRetainer", "SelectString", true, 0)
+
     local fully_stocked = true
     for slot = 0, 17 do
         if not __restock_crystals(slot, target) then
             fully_stocked = false
         end
     end
+
+    close_addon("InventoryRetainer")
     return fully_stocked
 end
 
@@ -359,11 +382,11 @@ end
 
 function move_partial_stack(src_inv, src_slot, count)
     if not any_addons_ready("InventoryRetainer") then
-        StopScript("RetainerInvNotOpen", CallerName(false), "Must have the retainer inventory panel open")
+        error("RetainerInvNotOpen", CallerName(false), "Must have the retainer inventory panel open")
     end
     local available = Inventory.GetInventoryItemBySlot(src_inv, src_slot).Count
     if available <= count then
-        StopScript("NotEnoughItems", CallerName(false), "Requested partial move", count, "but slot only has", available)
+        error("NotEnoughItems", CallerName(false), "Requested partial move", count, "but slot only has", available)
     end
     local menu_entry = "Retrieve Quantity"
     if list_contains({ InventoryType.Crystals, InventoryType.RetainerCrystals }, src_inv) then
@@ -374,7 +397,12 @@ function move_partial_stack(src_inv, src_slot, count)
     --- just ignore all those extra args, the context menu is completely invalid anyway...
     inst:OpenForItemSlot(src_inv, src_slot, 0, 0)
     --- danger zone: if the context menu goes away other than the callback in SelectInList the game will crash...
-    SelectInList(menu_entry)
+    if not SelectInList(menu_entry) then
+        close_addon("AddonContextSub")
+        close_addon("ContextMenu")
+        resume_pyes()
+        return
+    end
     --- perfectly safe :)
     wait_any_addons("InputNumeric")
     SafeCallback("InputNumeric", true, count)
@@ -383,7 +411,7 @@ end
 
 function move_items(source_inv, dest_inv, pred)
     if source_inv == nil or dest_inv == nil then
-        StopScript("Source and destination inventories must be provided")
+        error("Source and destination inventories must be provided")
     end
     if type(source_inv) ~= "table" then
         source_inv = { source_inv }
@@ -398,11 +426,11 @@ function move_items(source_inv, dest_inv, pred)
     while source_idx <= #source_inv do
         local sourceinv = Inventory.GetInventoryContainer(source_inv[source_idx])
         if sourceinv == nil then
-            StopScript("No inventory", CallerName(false), source_inv[source_idx])
+            error("No inventory", CallerName(false), source_inv[source_idx])
         else
             destinv = Inventory.GetInventoryContainer(dest_inv[dest_idx])
             if destinv == nil then
-                StopScript("No inventory", CallerName(false), dest_inv[dest_idx])
+                error("No inventory", CallerName(false), dest_inv[dest_idx])
             end
             for item in luanet.each(sourceinv.Items) do
                 if pred(item) then
@@ -419,7 +447,7 @@ function move_items(source_inv, dest_inv, pred)
                             if dest_idx <= #dest_inv then
                                 destinv = Inventory.GetInventoryContainer(dest_inv[dest_idx])
                                 if destinv == nil then
-                                    StopScript("No inventory", CallerName(false), dest_inv[dest_idx])
+                                    error("No inventory", CallerName(false), dest_inv[dest_idx])
                                 end
                             end
                         end
@@ -468,7 +496,7 @@ end
 
 function collect_reward_mail()
     if not Addons.GetAddon("LetterList").Ready then
-        StopScript("LetterList addon not ready")
+        error("LetterList addon not ready")
     end
     local count = tonumber(Addons.GetAddon("LetterList"):GetNode(1, 22, 23).Text:match("(.-)/"))
     repeat

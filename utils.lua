@@ -71,7 +71,7 @@ end
 function find_after(msg, target, after)
     e, s = msg:reverse():find(after:reverse())
     if e == nil then
-        return nil -- cant find something after something if the second thing doesnt exist!
+        return nil -- cant find something after something if the second thing doesn't exist!
     end
     return string.find(msg, target, -e)
 end
@@ -79,7 +79,7 @@ end
 function get_chat_messages(tab)
     local chat = GetNodeText("ChatLogPanel_" .. tostring(tab), 1, 2, 3)
     if chat == 2 then
-        StopScript("Error getting chat log")
+        error("Error getting chat log")
     end
     return chat
 end
@@ -106,11 +106,6 @@ function open_addon(addon, base_addon, ...)
     local ti = ResetTimeout()
     while not IsAddonReady(addon) do
         CheckTimeout(1, ti, CallerName(false), "Opening addon", addon)
-        if not IsAddonReady(base_addon) then
-            StopScript("open_addon failed", CallerName(false), "Failed opening", addon,
-                "base addon missing or not ready",
-                base_addon)
-        end
         SafeCallback(base_addon, ...)
         wait(0.1)
     end
@@ -137,13 +132,21 @@ function talk(who, what_addon)
     until IsAddonReady(what_addon)
 end
 
-function close_yes_no(accept, expected_text)
+function close_yes_no(accept, expected_text, mandatory)
+    mandatory = default(mandatory, false)
     accept = default(accept, false)
+    if mandatory then
+        wait_any_addons("SelectYesno")
+    end
     if IsAddonReady("SelectYesno") then
         if expected_text ~= nil then
             local node = GetNodeText("SelectYesno", 1, 2)
             if node == nil or not node:upper():find(expected_text:upper()) then
                 log_(LEVEL_DEBUG, _text, "Expected yesno text '" .. expected_text .. "' didnt match actual text:", node)
+                if mandatory then
+                    error("Wrong yesno", CallerName(false), "Expected yesno text", expected_text,
+                        "did not match actual text", node)
+                end
                 return
             end
         end
@@ -355,11 +358,11 @@ end
 function luminia_row_checked(table, id)
     local sheet = Excel.GetSheet(table)
     if sheet == nil then
-        StopScript("Unknown sheet", CallerName(false), "sheet not found for", table)
+        error("Unknown sheet", CallerName(false), "sheet not found for", table)
     end
     local row = sheet:GetRow(id)
     if row == nil then
-        StopScript("Unknown id", CallerName(false), "Id not found in excel data", table, id)
+        error("Unknown id", CallerName(false), "Id not found in excel data", table, id)
     end
     return row
 end
@@ -367,11 +370,11 @@ end
 function atk_data_checked(addon, index)
     local w = Addons.GetAddon(addon)
     if not (w.Exists and w.Ready) then
-        StopScript("No addon", CallerName(false), "addon", addon, "not ready")
+        error("No addon", CallerName(false), "addon", addon, "not ready")
     end
     local r = w:GetAtkValue(index)
     if r == nil then
-        StopScript("Bad atk index", CallerName(false), "addon", addon, "does not have index", index)
+        error("Bad atk index", CallerName(false), "addon", addon, "does not have index", index)
     end
     return r.ValueString
 end
@@ -394,7 +397,7 @@ end
 function GetListElement(menu, index)
     local a = Addons.GetAddon(menu)
     if not a.Ready then
-        StopScript("Bad addon", CallerName(false), menu)
+        error("Bad addon", CallerName(false), menu)
     end
     local n = nil
     if menu == "ContextMenu" then
@@ -404,7 +407,7 @@ function GetListElement(menu, index)
     elseif menu == "SelectString" or menu == "SelectIconString" then
         n = a:GetNode(1, 3, list_index(5, index), 2)
     else
-        StopScript("Unknown addon", CallerName(false), menu)
+        error("Unknown addon", CallerName(false), menu)
     end
     if tostring(n.NodeType):find("Text:") == nil then
         log_(LEVEL_DEBUG, _text, "Not a text node", CallerName(false), "NodeType:", n.NodeType, "NodeId:", n.Id, name,
@@ -511,12 +514,12 @@ function SafeCallback(addon, update, ...)
     pause_pyes()
     local callback_table = table.pack(...)
     if type(addon) ~= "string" then
-        StopScript("addonname must be a string")
+        error("addonname must be a string")
     end
     if type(update) == "boolean" then
         update = tostring(update)
     else
-        StopScript("update must be a bool")
+        error("update must be a bool")
     end
 
     local call_command = "/callback " .. addon .. " " .. update
@@ -527,7 +530,7 @@ function SafeCallback(addon, update, ...)
         elseif type(value) == "string" then
             call_command = call_command .. " \"" .. value .. "\""
         else
-            StopScript("Callbacks have to use numbers or strings!")
+            error("Callbacks have to use numbers or strings!")
         end
     end
     log_(LEVEL_DEBUG, _text, "Calling addon with command", call_command)
@@ -547,7 +550,7 @@ function bool_to_string(state, true_string, false_string)
             return false_string
         end
     else
-        StopScript("state must be a bool")
+        error("state must be a bool")
     end
 end
 
@@ -567,7 +570,7 @@ function string_to_bool(str, truey_values, falsey_values)
             return false
         end
     end
-    StopScript("InvalidBooleanString", CallerName(false), str)
+    error("InvalidBooleanString", CallerName(false), str)
 end
 
 --------------------
@@ -590,11 +593,11 @@ function require_plugins(plugins)
         end
     end
     if #plugins > 0 then
-        StopScript("Missing required plugins", CallerName(false), "Missing plugins:", table.concat(plugins, ", "))
+        error("Missing required plugins", CallerName(false), "Missing plugins:", table.concat(plugins, ", "))
     end
 end
 
-function StopScript(message, caller, ...)
+function error(message, caller, ...)
     caller = default(caller, CallerName())
     log("Fatal error " .. message .. " in " .. caller .. ": ", ...)
     if default(running_questy, false) then
@@ -618,7 +621,7 @@ function StopScript(message, caller, ...)
     luanet.error(_text(message, ...))
 end
 
-NO_CALL_INFO = true
+NO_CALL_INFO = false
 
 function CallerName(string)
     if NO_CALL_INFO then
@@ -747,15 +750,15 @@ end
 
 function CheckTimeout(max_duration, wait_info, context, ...)
     if wait_info == nil then
-        StopScript("wait_info is nil", CallerName(false), "Must be initialized with ResetTimeout()", "context:",
+        error("wait_info is nil", CallerName(false), "Must be initialized with ResetTimeout()", "context:",
             default(context, CallerName(false)), ...)
     end
     if max_duration == nil then
-        StopScript("max_duration is nil", CallerName(false), "Must be provided", "context:",
+        error("max_duration is nil", CallerName(false), "Must be provided", "context:",
             default(context, CallerName(false)), ...)
     end
     if os.clock() > wait_info + max_duration then
-        StopScript("Max duration reached", default(context, CallerName(false)), ...)
+        error("Max duration reached", default(context, CallerName(false)), ...)
     end
 end
 

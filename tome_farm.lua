@@ -31,6 +31,6 @@ function cap_tomes(weekly_limit, total_limit)
     log_(LEVEL_INFO, _text, "Finished, tome count:", cur_count, "weekly count:", cur_week)
 
     if cur_week ~= weekly_limit then
-        StopScript("NotCapped", CallerName(false), "Normal tome cap reached before weekly cap", cur_count, cur_week)
+        error("NotCapped", CallerName(false), "Normal tome cap reached before weekly cap", cur_count, cur_week)
     end
 end

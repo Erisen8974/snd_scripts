@@ -112,7 +112,7 @@ function warp_near_point(spot, radius, territory_id, fly)
     if Svc.ClientState.TerritoryType ~= territory_id then
         local a = nearest_aetherite(territory_id, spot)
         if a == nil then
-            StopScript("NoAetheryte", CallerName(false), "No aetherite found for", territory_id)
+            error("NoAetheryte", CallerName(false), "No aetherite found for", territory_id)
         end
         repeat
             Instances.Telepo:Teleport(a.AetherId, 0) -- IDK what the sub index is. if things break its probably that.
@@ -187,7 +187,7 @@ function jump_to_point(p, runup, retry)
         end
     until Vector3.Distance(Player.Entity.Position, start_pos) > runup or not IPC.vnavmesh.IsRunning()
     if not IPC.vnavmesh.IsRunning() then
-        StopScript("Failed to jump", CallerName(false), "to point", p)
+        error("Failed to jump", CallerName(false), "to point", p)
     end
     Actions.ExecuteGeneralAction(2)
     local retries = 0
@@ -202,7 +202,7 @@ function jump_to_point(p, runup, retry)
                     retries = retries + 1
                     Actions.ExecuteGeneralAction(2)
                 else
-                    StopScript("Stuck during jump", CallerName(false), "to point", p, "Landed at", Player.Entity
+                    error("Stuck during jump", CallerName(false), "to point", p, "Landed at", Player.Entity
                         .Position)
                 end
             end
@@ -212,14 +212,14 @@ function jump_to_point(p, runup, retry)
         end
     end
     if Vector3.Distance(Player.Entity.Position, p) > 3.0 then
-        StopScript("Missed jump", CallerName(false), "to point", p, "Landed at", Player.Entity.Position)
+        error("Missed jump", CallerName(false), "to point", p, "Landed at", Player.Entity.Position)
     end
     custom_path(false, { p })
     while IPC.vnavmesh.IsRunning() or Player.IsBusy do
         wait(0.1)
     end
     if Vector3.Distance(Player.Entity.Position, p) > 3.0 then
-        StopScript("Fell during reposition", CallerName(false), "to point", p, "Landed at", Player.Entity.Position)
+        error("Fell during reposition", CallerName(false), "to point", p, "Landed at", Player.Entity.Position)
     end
 end
 
@@ -235,7 +235,7 @@ function move_to_point(p)
             if stuck == nil then
                 stuck = os.clock()
             elseif os.clock() - stuck > .25 then
-                StopScript("Stuck during walk", CallerName(false), "to point", p, "Landed at", Player.Entity.Position)
+                error("Stuck during walk", CallerName(false), "to point", p, "Landed at", Player.Entity.Position)
             end
         else
             last_pos = Player.Entity.Position
@@ -304,7 +304,7 @@ function custom_path(fly, waypoints)
         elseif type(waypoint) == "userdata" then -- it better be a vector3
             vec_waypoints[i] = waypoint
         else
-            StopScript("Invalid waypoint type", CallerName(false), "Type:", type(waypoint))
+            error("Invalid waypoint type", CallerName(false), "Type:", type(waypoint))
         end
     end
     log_(LEVEL_DEBUG, _text, "Calling moveto")
@@ -320,7 +320,7 @@ function xyz_to_vec3(x, y, z)
         log_(LEVEL_VERBOSE, _text, "Converting coordinates to vector3", x, y, z)
         return Vector3(x, y, z)
     elseif y ~= nil or z ~= nil then
-        StopScript("Invalid coordinates for WalkTo", CallerName(false), "Must provide either vec3 or x,y,z", "x:", x,
+        error("Invalid coordinates for WalkTo", CallerName(false), "Must provide either vec3 or x,y,z", "x:", x,
             "y:", y, "z:", z)
     else
         log_(LEVEL_VERBOSE, _text, "Assuming provided value is already a vector3:", x)
@@ -341,7 +341,7 @@ function WalkTo(x, y, z, range)
         p = await(IPC.vnavmesh.Pathfind(Entity.Player.Position, pos, false))
     end
     if p.Count == 0 then
-        StopScript("No path found", CallerName(false), "x:", x, "y:", y, "z:", z, "range:", range)
+        error("No path found", CallerName(false), "x:", x, "y:", y, "z:", z, "range:", range)
     end
     log_(LEVEL_VERBOSE, _text, "Walking to", pos, "with range", range)
     if path_length(p) > SPRINT_THRESHOLD then
@@ -424,7 +424,7 @@ function RunVislandRoute(route_b64, wait_message)
 
     IPC.visland.StartRoute(route_b64, true)
     if not IPC.visland.IsRouteRunning() then
-        StopScript("Failed to start route", CallerName(), "Is visland enabled?")
+        error("Failed to start route", CallerName(), "Is visland enabled?")
     end
     repeat
         CheckTimeout(5 * 60, ti)
@@ -479,7 +479,7 @@ function get_closest_entity(name, critical)
     end
     local closest = raw_closest_thing(by_name(name), direct_distance)
     if critical and closest == nil then
-        StopScript("No entity found", CallerName(false), "Name:", name)
+        error("No entity found", CallerName(false), "Name:", name)
     end
     return EntityWrapper(closest)
 end
@@ -488,7 +488,7 @@ function closest_aethershard(critical)
     critical = default(critical, true)
     local closest = raw_closest_thing(is_aethershard, path_dist_to_obj(Player.CanFly))
     if critical and closest == nil then
-        StopScript("No aethershard found", CallerName(false))
+        error("No aethershard found", CallerName(false))
     end
     return closest
 end
