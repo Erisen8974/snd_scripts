@@ -18,6 +18,21 @@ local start_spot = Player.Entity.Position
 local GAMBA_TIME = 8000
 local PROCESS_RETAINERS = true
 
+--stage1 = 1237, 45591-45689
+--stage2 = 1291, 49009-49063
+--stage3 = 1310, 49126-49158
+--stage4 = ???, ???-???
+
+
+function on_moon()
+    return list_contains({ 1237, 1291, 1310 }, Svc.ClientState.TerritoryType)
+end
+
+local item_is_lunar = pred_any(
+    item_id_range(45591, 45689),
+    item_id_range(49009, 49063),
+    item_id_range(49126, 49158)
+)
 
 function ice_only_mission(s)
     local ICE_SETMISSION = 'ICE.OnlyMissions'
@@ -103,14 +118,11 @@ function set_missions(...)
     ice_only_mission(s)
 end
 
-function on_moon()
-    return list_contains({ 1237, 1291 }, Svc.ClientState.TerritoryType)
-end
-
 function return_to_craft()
     log_(LEVEL_VERBOSE, _text, "Craft return? Is crafter:", Player.Job.IsCrafter, "Setting enabled:", RETURN_TO_SPOT)
-    if RETURN_TO_SPOT and Player.Job.IsCrafter then
+    if RETURN_TO_SPOT and Player.Job.IsCrafter and Vector3.Distance(Player.Entity.Position, start_spot) > RETURN_RADIUS then
         move_near_point(start_spot, RETURN_RADIUS)
+        land_and_dismount()
     end
 end
 
@@ -145,10 +157,10 @@ function moon_talk(who)
     close_talk("SelectString", "SelectIconString", "RetainerList")
 end
 
-function report_research(class)
+function report_research(class_name)
     moon_talk("Researchingway")
     SelectInList("Report research data.", "SelectString")
-    SelectInList(class.Name, "SelectIconString", true)
+    SelectInList(class_name, "SelectIconString", true)
     local yesno
     repeat
         yesno = Addons.GetAddon("SelectYesno")
@@ -171,14 +183,6 @@ function start_gamba()
         wait(1)
     until ice_current_state() == "Idle"
     close_talk()
-end
-
---stage1_range = 45591-45689
---stage2_range = 49009-49063
-
-function item_is_lunar(item_id)
-    return item_id_range(45591, 45689)(item_id)
-        or item_id_range(49009, 49063)(item_id)
 end
 
 function move_lunar_weapons()
@@ -209,20 +213,20 @@ end
 
 function is_moon_tool_equiped()
     for item in luanet.each(Inventory.GetInventoryContainer(InventoryType.EquippedItems).Items) do
-        if item_is_lunar(item.ItemId) then
+        if item_is_lunar(item) then
             return true
         end
     end
     return false
 end
 
-function equip_some_other_job(initial_gs)
+function equip_some_other_job(initial_class_job)
     for gs in luanet.each(Player.Gearsets) do
-        if gs.ClassJob ~= initial_gs.ClassJob then
+        if gs.ClassJob ~= initial_class_job then
             repeat
                 gs:Equip()
                 wait_ready(10, 1)
-            until Player.Gearset.ClassJob ~= initial_gs.ClassJob
+            until Player.Gearset.ClassJob ~= initial_class_job
             return true
         end
     end
@@ -230,28 +234,32 @@ function equip_some_other_job(initial_gs)
 end
 
 function reapply_gearset(gs)
-    local yesno = nil
+    local ti = ResetTimeout()
     repeat
-        gs:Equip()
+        CheckTimeout(10, ti, CallerName(false), "Failed to reapply gearset")
+        local target_gs = Player.GetGearset(gs)
+        if not target_gs.IsValid then
+            error("Invalid Gearset", CallerName(false), "Original gearset is not valid, cannot reapply")
+        end
+        target_gs:Equip()
         wait(0.3)
-        yesno = Addons.GetAddon("SelectYesno")
-        wait(0.3)
+        local yesno = Addons.GetAddon("SelectYesno")
         if yesno.Ready then
             close_yes_no(true,
                 "registered to this gear set could not be found in your Armoury Chest. Replace it with")
         end
         wait(0.4)
-    until Player.Gearset.BannerIndex == gs.BannerIndex
+    until current_gearset_index() == gs
     wait_ready(10, 1)
 end
 
 function report_research_safe()
-    local initial_gs = Player.Gearset
-    local initial_job = Player.Job
+    local initial_gs = current_gearset_index()
+    local initial_job = Player.Job.Name
 
     local need_swap = is_moon_tool_equiped()
     if need_swap then
-        if not equip_some_other_job(initial_gs) then
+        if not equip_some_other_job(Player.Gearset.ClassJob) then
             error("No Other Job", CallerName(false),
                 "Need to change gearset to hand in tool but no gearsets for other jobs were found")
         end
@@ -380,11 +388,13 @@ function get_lunar_credits()
 end
 
 function do_upkeep()
+    local need_return = false
     log_(LEVEL_DEBUG, _text, "Doing upkeep")
     log_(LEVEL_DEBUG, _text, "GAMBA_TIME:", GAMBA_TIME, "PROCESS_RETAINERS:", PROCESS_RETAINERS)
     if GAMBA_TIME > 0 and get_lunar_credits() >= GAMBA_TIME then
         log_(LEVEL_DEBUG, _text, "Starting gamba")
         start_gamba()
+        need_return = true
     end
     if PROCESS_RETAINERS and IPC.AutoRetainer.AreAnyRetainersAvailableForCurrentChara() then
         log_(LEVEL_DEBUG, _text, "Processing retainers")
@@ -394,6 +404,11 @@ function do_upkeep()
         until not IPC.AutoRetainer.IsBusy()
         close_addon("RetainerList")
         close_talk()
+        need_return = true
+    end
+    if need_return then
+        log_(LEVEL_DEBUG, _text, "Returning to crafting spot after upkeep (If crafter)")
+        return_to_craft()
     end
 end
 
@@ -471,11 +486,7 @@ function run_mission(relic_max, gamba_time, process_retainers)
             ready = false
             log_(LEVEL_INFO, _text, "Need", need, "type", t, "research")
 
-            ice_setting("OnlyGrabMission", false)
             ice_setting("StopAfterCurrent", true)
-            ice_setting("XPRelicGrind", true)
-            ice_setting("StopOnceHitCosmoCredits", false)
-            ice_setting("StopOnceHitLunarCredits", false)
 
             start_ice_once()
             break
@@ -483,5 +494,6 @@ function run_mission(relic_max, gamba_time, process_retainers)
     end
     if ready and not finished then
         report_research_safe()
+        return_to_craft()
     end
 end

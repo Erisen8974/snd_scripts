@@ -251,53 +251,106 @@ end
 -- Are retainers like a squadron?
 -- not really...
 
-function set_retainer_jobs(job)
+function set_retainer_jobs(job, job_full)
+    if job == "Current" then
+        job = Player.Job.Abbreviation
+        job_full = title_case(Player.Job.Name)
+    end
+    if job == nil or job_full == nil then
+        error("BadArgument", CallerName(false), "Job and job_full must be specified or job must be 'Current'")
+    end
+    if #job ~= 3 then
+        error("BadArgument", CallerName(false), "Job must be a 3-letter abbreviation")
+    end
+
+    local company = Player.GrandCompany
+    if company == 1 then
+        smart_path("Limsa Lominsa Lower Decks", -147, 18.2, 18)
+    elseif company == 2 then
+        smart_path("Old Gridania", 169, 15.5, -100)
+    elseif company == 3 then
+        smart_path("Ul'dah - Steps of Thal", 109, 4.1, -74)
+    else
+        error("UnknownGC", CallerName(false), "Edit script to set a city")
+    end
+
+    local function __set_retainer_job(retainer)
+        pause_pyes()
+        wait_ready(5, 0.5, false, 0.1)
+        if Inventory.GetItemCount(14044) == 0 then
+            if company == 1 then
+                OpenShop("Frydwyb", "SelectString")
+            elseif company == 2 then
+                OpenShop("Parnell", "SelectString")
+            elseif company == 3 then
+                OpenShop("Chachabi", "SelectString")
+            end
+
+            SelectInList("Inquire about retainer jobs.", "SelectString")
+            SelectInList("Purchase a copy of Modern Vocation.", "SelectString")
+            close_yes_no(true, "Exchange 40 ventures", true)
+            close_talk()
+            wait_ready(5, 0.5, false, 0.1)
+        end
+        open_retainer_bell()
+        open_retainer(retainer)
+        if SelectInList("venture report", "SelectString", true) then
+            open_addon("SelectYesno", "RetainerTaskResult", true, 13)
+            close_yes_no(true, "Cancel venture", true)
+        end
+        unequip_retainer()
+        SelectInList("Assign retainer a job.", "SelectString")
+        SelectInList(job_full .. '.', "SelectString")
+        resume_pyes()
+        close_yes_no(true, "Modern Vocation", true)
+        wait_any_addons("SelectString")
+        pause_pyes()
+        equip_retainer_weapon(job)
+        SelectInList("Assign venture.", "SelectString")
+        SelectInList("Quick Exploration.", "SelectString")
+        wait_any_addons("RetainerTaskAsk")
+        SafeCallback("RetainerTaskAsk", true, 12)
+        close_talk("SelectString")
+        close_retainer()
+        close_addon("RetainerList")
+        resume_pyes()
+        IPC.AutoRetainer.SetSuppressed(false)
+    end
+
     local info = get_char_info(Player.Entity.Name)
     if info ~= nil then
         local retainers = info.Retainers
         if retainers == nil then
-            error("Retainers Error", CallerName(false), "no retainer info defined for",
-                Player.Entity.Name)
+            error("Retainers Error", CallerName(false), "no retainer info defined for", Player.Entity.Name)
         end
         for i, r in ipairs(retainers) do
-            set_retainer_job(r, job)
+            if i > 0 then
+                __set_retainer_job(r)
+            end
         end
         return
     end
     error("Char Error", CallerName(false), "no char info defined for", Player.Entity.Name)
 end
 
-function set_retainer_job(retainer, job)
-    pause_pyes()
-
-    --smart_path("Old Gridania", 169, 15.5, -100)
-    smart_path("Limsa Lominsa Lower Decks", -147, 18.2, 18)
-    --smart_path("Ul'dah - Steps of Thal", 109, 4.1, -74)
-
-    OpenShop("Parnell", "SelectString")
-    SelectInList("Inquire about retainer jobs.", "SelectString")
-    SelectInList("Purchase a copy of Modern Vocation.", "SelectString")
-    close_yes_no(true, "Exchange 40 ventures", true)
-    close_talk()
-    open_retainer_bell()
-    open_retainer(retainer)
-    if SelectInList("venture report", "SelectString", true) then
-        open_addon("SelectYesno", "RetainerTaskResult", true, 13)
-        close_yes_no(true, "Cancel venture", true)
-    end
-    SelectInList("Assign retainer a job.", "SelectString")
-    SelectInList(job .. '.', "SelectString")
-    resume_pyes()
-    close_yes_no(true, "Modern Vocation", true)
+function unequip_retainer()
+    SelectInList("gear", "SelectString", true)
+    wait(.1)
+    move_items(InventoryType.RetainerEquippedItems, { InventoryType.ArmoryMainHand, table.unpack(ALL_INVENTORY) })
+    wait(.1)
+    close_addon("RetainerCharacter")
     wait_any_addons("SelectString")
-    pause_pyes()
-    SelectInList("Assign venture.", "SelectString")
-    SelectInList("Quick Exploration.", "SelectString")
-    open_addon("SelectString", "RetainerTaskAsk", true, 12)
-    close_retainer()
-    close_addon("RetainerList")
-    resume_pyes()
-    IPC.AutoRetainer.SetSuppressed(false)
+end
+
+function equip_retainer_weapon(job)
+    SelectInList("gear", "SelectString", true)
+    wait(.1)
+    local p = pred_all(item_in_gearset(false), is_item_job(job), is_item_equip_slot("MainHand"))
+    move_items({ InventoryType.ArmoryMainHand, table.unpack(ALL_INVENTORY) }, InventoryType.RetainerEquippedItems, p, 1)
+    wait(.1)
+    wait_any_addons("RetainerCharacter")
+    close_addon("RetainerCharacter")
+    wait_any_addons("SelectString")
 end
 
 --#endregion

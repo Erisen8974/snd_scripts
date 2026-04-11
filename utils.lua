@@ -105,7 +105,7 @@ function open_addon(addon, base_addon, ...)
     wait_any_addons(base_addon)
     local ti = ResetTimeout()
     while not IsAddonReady(addon) do
-        CheckTimeout(1, ti, CallerName(false), "Opening addon", addon)
+        CheckTimeout(3, ti, CallerName(false), "Opening addon", addon)
         SafeCallback(base_addon, ...)
         wait(0.1)
     end
@@ -114,7 +114,7 @@ end
 function confirm_addon(addon, ...)
     local ti = ResetTimeout()
     while IsAddonReady(addon) do
-        CheckTimeout(1, ti, CallerName(false), "Confirming addon", addon)
+        CheckTimeout(3, ti, CallerName(false), "Confirming addon", addon)
         SafeCallback(addon, ...)
         wait(0.1)
     end
@@ -200,10 +200,11 @@ end
 
 function open_retainer_bell()
     OpenShop("Summoning Bell", { "RetainerList", "SelectString", "RetainerGrid", "RetainerTaskAsk", "Bank" })
-    if IPC.AutoRetainer.AreAnyRetainersAvailableForCurrentChara() then
-        repeat
-            wait(1)
-        until not IPC.AutoRetainer.IsBusy()
+    while IPC.AutoRetainer.AreAnyRetainersAvailableForCurrentChara() do
+        wait(1)
+    end
+    while IPC.AutoRetainer.IsBusy() do
+        wait(1)
     end
     wait_any_addons("RetainerList")
 end
@@ -325,16 +326,17 @@ end
 
 function is_busy()
     return Player.IsBusy or GetCharacterCondition(6) or GetCharacterCondition(26) or GetCharacterCondition(27) or
-        GetCharacterCondition(43) or
+        GetCharacterCondition(43) or GetCharacterCondition(50) or
         GetCharacterCondition(45) or GetCharacterCondition(51) or GetCharacterCondition(32) or
         not (GetCharacterCondition(1) or GetCharacterCondition(4)) or
         (not IPC.vnavmesh.IsReady()) or IPC.vnavmesh.PathfindInProgress() or IPC.vnavmesh.IsRunning()
 end
 
-function wait_ready(max_wait, n_ready, stationary)
+function wait_ready(max_wait, seconds_ready, stationary, interval)
     stationary = default(stationary, true)
-    n_ready = default(n_ready, 5)
-    local ready_count = 0
+    seconds_ready = default(seconds_ready, 5)
+    interval = default(interval, 1)
+    local ready_time = os.clock()
     local ti = nil
     local p = Entity.Player.Position
     if max_wait ~= nil then
@@ -342,18 +344,16 @@ function wait_ready(max_wait, n_ready, stationary)
     end
     repeat
         if ti ~= nil then
-            CheckTimeout(max_wait, ti, CallerName(), "wait_ready timed out with ready count", ready_count, "and target",
-                n_ready)
+            CheckTimeout(max_wait, ti, CallerName(), "wait_ready timed out with ready time", os.clock() - ready_time,
+                "and target", seconds_ready)
         end
-        wait(1)
+        wait(interval)
         ---@diagnostic disable-next-line: undefined-field  Vector3.Distance exists....
-        if is_busy() or (stationary and Vector3.Distance(p, Entity.Player.Position) > 1) then
+        if is_busy() or (stationary and Vector3.Distance(p, Entity.Player.Position) > interval) then
             p = Entity.Player.Position
-            ready_count = 0
-        else
-            ready_count = ready_count + 1
+            ready_time = os.clock()
         end
-    until ready_count >= n_ready
+    until os.clock() - ready_time >= seconds_ready
 end
 
 function luminia_row_checked(table, id)

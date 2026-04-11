@@ -226,6 +226,11 @@ end
 RaptureGearsetModule_GearsetItemIndex = load_type(
     "FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule+GearsetItemIndex")
 
+function current_gearset_index()
+    local RaptureGearsetModule = cs_instance("FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule")
+    return RaptureGearsetModule.CurrentGearsetIndex
+end
+
 function resolve_gearset_ids(number)
     RaptureGearsetModule = cs_instance("FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule")
     if not RaptureGearsetModule:IsValidGearset(number) then
@@ -330,6 +335,50 @@ function item_in_gearset(in_gearset)
     end
 end
 
+function is_item_job(job)
+    return function(item)
+        local cat = luminia_row_checked("item", item.ItemId).ClassJobCategory
+        if cat.RowId == 0 then
+            return nil
+        end
+        return cat[job]
+    end
+end
+
+function is_item_equip_slot(slot)
+    return function(item)
+        local cat = luminia_row_checked("item", item.ItemId).EquipSlotCategory
+        if cat.RowId == 0 then
+            return nil
+        end
+        return cat[slot]
+    end
+end
+
+function pred_all(...)
+    local pred_list = table.pack(...)
+    return function(item)
+        for i = 1, pred_list.n do
+            if not pred_list[i](item) then
+                return false
+            end
+        end
+        return true
+    end
+end
+
+function pred_any(...)
+    local pred_list = table.pack(...)
+    return function(item)
+        for i = 1, pred_list.n do
+            if pred_list[i](item) then
+                return true
+            end
+        end
+        return false
+    end
+end
+
 function restock_crystals(target)
     local need_restock = false
     local can_restock = false
@@ -409,7 +458,8 @@ function move_partial_stack(src_inv, src_slot, count)
     resume_pyes()
 end
 
-function move_items(source_inv, dest_inv, pred)
+function move_items(source_inv, dest_inv, pred, count)
+    count = default(count, -1)
     if source_inv == nil or dest_inv == nil then
         error("Source and destination inventories must be provided")
     end
@@ -424,10 +474,12 @@ function move_items(source_inv, dest_inv, pred)
     local dest_idx = 1
     local destinv = nil
     while source_idx <= #source_inv do
+        wait(0)
         local sourceinv = Inventory.GetInventoryContainer(source_inv[source_idx])
         if sourceinv == nil then
             error("No inventory", CallerName(false), source_inv[source_idx])
         else
+            wait(0)
             destinv = Inventory.GetInventoryContainer(dest_inv[dest_idx])
             if destinv == nil then
                 error("No inventory", CallerName(false), dest_inv[dest_idx])
@@ -439,12 +491,19 @@ function move_items(source_inv, dest_inv, pred)
                         if destinv.FreeSlots > 0 then
                             log("Moving", item.ItemId, "from", source_inv[source_idx], "to", dest_inv[dest_idx])
                             item:MoveItemSlot(dest_inv[dest_idx])
+                            if count > 0 then
+                                count = count - 1
+                                if count == 0 then
+                                    return true -- moved all requested items
+                                end
+                            end
                             need_move = false
                             wait(0)
                         else
                             log_(LEVEL_INFO, _text, "No space to move item to", dest_inv[dest_idx])
                             dest_idx = dest_idx + 1
                             if dest_idx <= #dest_inv then
+                                wait(0)
                                 destinv = Inventory.GetInventoryContainer(dest_inv[dest_idx])
                                 if destinv == nil then
                                     error("No inventory", CallerName(false), dest_inv[dest_idx])

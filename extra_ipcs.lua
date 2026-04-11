@@ -37,6 +37,7 @@ local STYLIST_IS_BUSY = STYLIST .. '.IsBusy'
 local STYLIST_UPDATE_CURRENT_GEARSET = STYLIST .. '.UpdateCurrentGearset'
 
 function stylist_update_current_gearset()
+    Player.Gearset:Update()
     require_ipc(STYLIST_IS_BUSY, 'System.Boolean', {})
     require_ipc(STYLIST_UPDATE_CURRENT_GEARSET, nil, { 'System.Boolean' })
     local ti = ResetTimeout()

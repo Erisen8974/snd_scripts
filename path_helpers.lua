@@ -329,8 +329,10 @@ function move_to_point(p)
     end
 end
 
-function walk_path(path, fly, range, stop_if_stuck, ref_point)
+function walk_path(path, fly, range, stop_if_stuck, ref_point, max_stuck_time)
+    local stuck_start = os.clock()
     running_vnavmesh = true
+    max_stuck_time = default(max_stuck_time, 1)
     stop_if_stuck = default(stop_if_stuck, false)
     ref_point = default(ref_point, path[path.Count - 1])
     local ti = ResetTimeout()
@@ -346,11 +348,16 @@ function walk_path(path, fly, range, stop_if_stuck, ref_point)
             IPC.vnavmesh.Stop()
         end
         if not fly or GetCharacterCondition(4) then
+            local now = os.clock()
             if stop_if_stuck and Vector3.Distance(last_pos, cur_pos) < stop_if_stuck then
-                log_(LEVEL_ERROR, _text, "Antistuck triggered!")
-                IPC.vnavmesh.Stop()
+                if stuck_start + max_stuck_time < now then
+                    log_(LEVEL_ERROR, _text, "Antistuck triggered!")
+                    IPC.vnavmesh.Stop()
+                end
+            else
+                stuck_start = now
+                last_pos = cur_pos
             end
-            last_pos = cur_pos
         end
         wait(0.1)
     end
