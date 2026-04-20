@@ -291,6 +291,7 @@ function resolve_gearset_items(number)
         for _, container in pairs(ALL_EQUIPMENT) do
             local inv = Inventory.GetInventoryContainer(container)
             for item in luanet.each(inv.Items) do
+                long_task_delay()
                 local itemId = item.ItemId
                 if item.IsHighQuality then
                     itemId = itemId + 1000000
@@ -474,17 +475,16 @@ function move_items(source_inv, dest_inv, pred, count)
     local dest_idx = 1
     local destinv = nil
     while source_idx <= #source_inv do
-        wait(0)
         local sourceinv = Inventory.GetInventoryContainer(source_inv[source_idx])
         if sourceinv == nil then
             error("No inventory", CallerName(false), source_inv[source_idx])
         else
-            wait(0)
             destinv = Inventory.GetInventoryContainer(dest_inv[dest_idx])
             if destinv == nil then
                 error("No inventory", CallerName(false), dest_inv[dest_idx])
             end
             for item in luanet.each(sourceinv.Items) do
+                long_task_delay()
                 if pred(item) then
                     local need_move = true
                     while dest_idx <= #dest_inv and need_move do
@@ -498,12 +498,10 @@ function move_items(source_inv, dest_inv, pred, count)
                                 end
                             end
                             need_move = false
-                            wait(0)
                         else
                             log_(LEVEL_INFO, _text, "No space to move item to", dest_inv[dest_idx])
                             dest_idx = dest_idx + 1
                             if dest_idx <= #dest_inv then
-                                wait(0)
                                 destinv = Inventory.GetInventoryContainer(dest_inv[dest_idx])
                                 if destinv == nil then
                                     error("No inventory", CallerName(false), dest_inv[dest_idx])
@@ -520,6 +518,23 @@ function move_items(source_inv, dest_inv, pred, count)
         source_idx = source_idx + 1
     end
     return true -- all items if any were able to be moved
+end
+
+function make_armory_space(amount, armory_slots, allowed_move)
+    armory_slots = default(armory_slots, ALL_ARMORY)
+    local success = true
+    for _, slot in pairs(armory_slots) do
+        local inv = Inventory.GetInventoryContainer(slot)
+        local needed = amount - inv.FreeSlots
+        if needed > 0 then
+            log_(LEVEL_INFO, _text, "Need to move", needed, "items out of armory slot", slot)
+            if not move_items(slot, ALL_INVENTORY, allowed_move, needed) then
+                success = false
+                log_(LEVEL_ERROR, _text, "Not enough space to move items out of armory slot", slot)
+            end
+        end
+    end
+    return success
 end
 
 function open_map(map_name, partial_ok)
@@ -557,21 +572,28 @@ function collect_reward_mail()
     if not Addons.GetAddon("LetterList").Ready then
         error("LetterList addon not ready")
     end
-    local count = tonumber(Addons.GetAddon("LetterList"):GetNode(1, 22, 23).Text:match("(.-)/"))
+    wait(1)
+    local count = tonumber(Addons.GetAddon("LetterList"):GetNode(1, 22, 23).Text:match("(.-)/20"))
+    log_(LEVEL_INFO, _text, "Starting to collect reward mail, count:", count)
+    if count == 0 or count == nil then
+        log_(LEVEL_INFO, _text, "Error or no mail")
+        return
+    end
     repeat
         open_addon("LetterViewer", "LetterList", true, 0, 0)
         SafeCallback("LetterViewer", true, 1)
-        repeat wait(0) until Addons.GetAddon("LetterViewer"):GetNode(1, 32, 2, 3).IsVisible
-        repeat wait(0) until not Addons.GetAddon("LetterViewer"):GetNode(1, 32, 2, 3).IsVisible
+        repeat wait(.1) until Addons.GetAddon("LetterViewer"):GetNode(1, 32, 2, 3).IsVisible
+        repeat wait(.1) until not Addons.GetAddon("LetterViewer"):GetNode(1, 32, 2, 3).IsVisible
         wait(.1)
         SafeCallback("LetterViewer", true, 2)
         wait_any_addons("SelectYesno")
         SafeCallback("SelectYesno", true, 0)
         local l = count
         repeat
-            wait(0)
-            count = tonumber(Addons.GetAddon("LetterList"):GetNode(1, 22, 23).Text:match("(.-)/"))
+            wait(.1)
+            count = tonumber(Addons.GetAddon("LetterList"):GetNode(1, 22, 23).Text:match("(.-)/20"))
         until l ~= count
+        log_(LEVEL_INFO, _text, "Collected reward mail, remaining count:", count)
         wait(.1)
     until count == 0
     close_addon("LetterList")

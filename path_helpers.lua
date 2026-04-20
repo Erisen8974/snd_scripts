@@ -18,10 +18,12 @@ function smart_path(place_name, x, y, z)
     local shard_distance = math.maxinteger
     for _, info in pairs(nets) do
         if info.TerritoryName == place_name then
-            local dist = Vector3.Distance(info.Position, goal_point)
-            if dist < shard_distance then
-                nearest_shard = info
-                shard_distance = dist
+            if not info.Invisible then
+                local dist = Vector3.Distance(info.Position, goal_point)
+                if dist < shard_distance then
+                    nearest_shard = info
+                    shard_distance = dist
+                end
             end
         end
     end
@@ -131,15 +133,11 @@ local aether_info = nil
 local net_info = nil
 function load_aether_info()
     if aether_info == nil or net_info == nil then
-        local t = os.clock()
         aether_info = {}
         net_info = {}
         local sheet = Excel.GetSheet("Aetheryte")
         for r = 0, sheet.Count - 1 do
-            if os.clock() - t > 1.0 / 10.0 then
-                wait(0)
-                t = os.clock()
-            end
+            long_task_delay()
             local row = sheet[r]
             if Instances.Telepo:IsAetheryteUnlocked(r) then
                 if row.IsAetheryte then

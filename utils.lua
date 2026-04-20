@@ -778,3 +778,14 @@ function AlertTimeout(max_duration, wait_info, context, ...)
     end
     return false
 end
+
+-- delay for longer tasks to avoid complete game freezes
+local _LAST_FRAME_TIME = os.clock()
+local _MIN_FPS = 10.0
+function long_task_delay(min_fps)
+    min_fps = default(min_fps, _MIN_FPS)
+    if os.clock() - _LAST_FRAME_TIME > 1.0 / min_fps then
+        wait(0)
+        _LAST_FRAME_TIME = os.clock()
+    end
+end

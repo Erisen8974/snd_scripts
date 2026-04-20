@@ -1,5 +1,6 @@
 require 'utils'
 require 'shop_helpers'
+require 'path_helpers'
 
 
 function squad_test()
@@ -251,7 +252,7 @@ end
 -- Are retainers like a squadron?
 -- not really...
 
-function set_retainer_jobs(job, job_full)
+function set_retainer_jobs(job, job_full, retainer_num)
     if job == "Current" then
         job = Player.Job.Abbreviation
         job_full = title_case(Player.Job.Name)
@@ -304,8 +305,8 @@ function set_retainer_jobs(job, job_full)
         resume_pyes()
         close_yes_no(true, "Modern Vocation", true)
         wait_any_addons("SelectString")
+        equip_retainer_weapon(job, job_full)
         pause_pyes()
-        equip_retainer_weapon(job)
         SelectInList("Assign venture.", "SelectString")
         SelectInList("Quick Exploration.", "SelectString")
         wait_any_addons("RetainerTaskAsk")
@@ -324,7 +325,7 @@ function set_retainer_jobs(job, job_full)
             error("Retainers Error", CallerName(false), "no retainer info defined for", Player.Entity.Name)
         end
         for i, r in ipairs(retainers) do
-            if i > 0 then
+            if i > 0 and (retainer_num == nil or i == retainer_num) then
                 __set_retainer_job(r)
             end
         end
@@ -342,15 +343,53 @@ function unequip_retainer()
     wait_any_addons("SelectString")
 end
 
-function equip_retainer_weapon(job)
+function equip_retainer_weapon(job, job_full)
+    local ti = ResetTimeout()
     SelectInList("gear", "SelectString", true)
-    wait(.1)
+    wait_any_addons("RetainerCharacter")
+    repeat
+        wait(.1)
+    until GetNodeText("RetainerCharacter", 1, 108, 149, 152) == job_full
     local p = pred_all(item_in_gearset(false), is_item_job(job), is_item_equip_slot("MainHand"))
-    move_items({ InventoryType.ArmoryMainHand, table.unpack(ALL_INVENTORY) }, InventoryType.RetainerEquippedItems, p, 1)
+    while Inventory.GetInventoryContainer(InventoryType.RetainerEquippedItems).Items.Count == 0 do
+        CheckTimeout(10, ti, CallerName(false), "Waiting for weapon to be in inventory for job", job_full)
+        wait(.2)
+        if not move_items({ InventoryType.ArmoryMainHand, table.unpack(ALL_INVENTORY) }, InventoryType.RetainerEquippedItems, p, 1) then
+            error("EquipError", CallerName(false), "Could not find weapon not in gearset for job", job_full)
+        end
+    end
     wait(.1)
     wait_any_addons("RetainerCharacter")
     close_addon("RetainerCharacter")
     wait_any_addons("SelectString")
+end
+
+function get_weapon() --assumes viper is the only unlocked 80 class
+    smart_path("Limsa Lominsa Upper Decks", 5.8, 44.6, 153.6)
+    OpenShop("Calamity Salvager", "Shop", {
+        SelectIconString = { 2 },
+        SelectString = { 8 }
+    })
+    pause_pyes()
+    SafeCallback("Shop", true, 0, 0, 1)
+    close_yes_no(true, "cannot currently equip", true)
+    close_yes_no(true, "Purchase", true)
+    resume_pyes()
+    close_addons({ "Shop", "SelectString" })
+end
+
+function make_vpr(s, e)
+    s = default(s, 1)
+    e = default(e, 9)
+    for i = s, e do
+        if Inventory.GetItemCount(41808) == 0 then
+            get_weapon()
+        end
+        set_retainer_jobs("VPR", "Viper", i)
+    end
+    if Inventory.GetItemCount(41808) == 0 then
+        get_weapon()
+    end
 end
 
 --#endregion
