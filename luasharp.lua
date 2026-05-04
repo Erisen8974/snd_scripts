@@ -145,18 +145,26 @@ function get_method(type, method_name, binding)
     return method
 end
 
-function get_field(type, field_name, binding)
+function get_field(type, field_name, binding, required)
+    required = default(required, true)
     local field = type:GetField(field_name, make_binding_flags(binding))
     if field == nil then
-        error("Field not found", CallerName(false), "type:", type, "field_name:", field_name)
+        if required then
+            error("Field not found", CallerName(false), "type:", type, "field_name:", field_name)
+        end
+        return nil
     end
     return field
 end
 
-function get_property(type, property_name, binding)
+function get_property(type, property_name, binding, required)
+    required = default(required, true)
     local property = type:GetProperty(property_name, make_binding_flags(binding))
     if property == nil then
-        error("Property not found", CallerName(false), "type:", type, "property_name:", property_name)
+        if required then
+            error("Property not found", CallerName(false), "type:", type, "property_name:", property_name)
+        end
+        return nil
     end
     return property
 end

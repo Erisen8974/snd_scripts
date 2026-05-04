@@ -158,6 +158,7 @@ end
 
 function setup_content(type, unsync)
     IPC.AutoDuty.SetConfig("autoDutyModeEnum", "Looping")
+    IPC.AutoDuty.SetConfig("leveling", "None")
     if type == "Dungeons" and unsync then
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Regular")
         IPC.AutoDuty.SetConfig("Unsynced", "True")
