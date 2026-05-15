@@ -336,6 +336,15 @@ function item_in_gearset(in_gearset)
     end
 end
 
+function itemid_gs_submittable(itemid)
+    local item_row = luminia_row_checked("item", itemid)
+    return item_row.Rarity > 1 and item_row.EquipSlotCategory.RowId ~= 0
+end
+
+function item_gs_submittable(item)
+    return itemid_gs_submittable(item.ItemId)
+end
+
 function is_item_job(job)
     return function(item)
         local cat = luminia_row_checked("item", item.ItemId).ClassJobCategory
@@ -517,7 +526,7 @@ function move_items(source_inv, dest_inv, pred, count)
         end
         source_idx = source_idx + 1
     end
-    return true -- all items if any were able to be moved
+    return count <= 0 -- all items if any were able to be moved
 end
 
 function make_armory_space(amount, armory_slots, allowed_move)
@@ -530,7 +539,7 @@ function make_armory_space(amount, armory_slots, allowed_move)
             log_(LEVEL_INFO, _text, "Need to move", needed, "items out of armory slot", slot)
             if not move_items(slot, ALL_INVENTORY, allowed_move, needed) then
                 success = false
-                log_(LEVEL_ERROR, _text, "Not enough space to move items out of armory slot", slot)
+                log_(LEVEL_ERROR, _text, "Couldnt move items out of armory slot", slot)
             end
         end
     end

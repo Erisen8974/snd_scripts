@@ -66,8 +66,6 @@ function ar_add_unconditional_sell(plan_name, itemid)
     local i = get_plugin_instance("AutoRetainer")
     local im_settings = _field(i, "API", "Config", "AdditionalIMSettings")
 
-    log(im_settings)
-
     for settings in luanet.each(im_settings) do
         if settings.Name == plan_name then
             if settings.IMProtectList:Contains(itemid) then
