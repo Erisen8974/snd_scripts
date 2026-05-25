@@ -86,6 +86,39 @@ function assembly_name(inputstr)
     end
 end
 
+function _field(o, field, ...)
+    if field == nil then
+        return o
+    end
+    local t = o:GetType()
+    local f = get_field(t, field, { private = true, static = true }, false)
+    if f == nil then
+        f = get_property(t, field, { private = true, static = true }, false)
+        if f == nil then
+            error("field or property not found", CallerName(false), o, field)
+        end
+    end
+    local res = f:GetValue(o)
+    if res == o then
+        error("could not get value", CallerName(false), o, field)
+    end
+    return _field(res, ...)
+end
+
+function get_plugin_instance(plugin_name, required)
+    required = default(required, true)
+    local DalamudReflector = load_type("ECommons.Reflection.DalamudReflector")
+    local pluginManager = DalamudReflector.GetPluginManager()
+    for plugin in luanet.each(pluginManager.InstalledPlugins) do
+        if plugin.Name == plugin_name then
+            return _field(plugin, "instance")
+        end
+    end
+    if required then
+        error("Plugin not found", CallerName(false), plugin_name)
+    end
+end
+
 LOADED_ASSEMBLIES = {}
 TYPE_CACHE = {}
 

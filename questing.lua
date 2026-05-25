@@ -1,5 +1,6 @@
 require 'utils'
 require 'luasharp'
+require 'extra_ipcs'
 require 'path_helpers'
 require 'inventory_buddy'
 
@@ -126,4 +127,35 @@ function AcceptQuest(who, which, qlist)
         wait(.1)
     until not Player.IsBusy
     wait(.1)
+end
+
+function questy_ar_watcher(early_pause, interval)
+    require_plugins({ "Questionable", "AutoRetainer", "Lifestream" })
+    interval = default(interval, 10)
+    local char = Player.Entity.Name
+    local world = Player.Entity.HomeWorld
+    if not IPC.Questionable.IsRunning() then
+        log_(LEVEL_DEBUG, _text, "Questy is not running, starting it")
+        yield('/qst start')
+    end
+
+    while true do
+        repeat wait(interval) until ar_multi_mode_would_start(early_pause) or not IPC.Questionable.IsRunning()
+        if not IPC.Questionable.IsRunning() then
+            log_(LEVEL_INFO, _text, "Questy stopped, out of quests?", char, "Starting multi mode")
+            yield('/ays multi enable')
+            return
+        end
+        log_(LEVEL_DEBUG, _text, "Retainer ready, stopping questy")
+        questy_stop_soon()
+        repeat wait(interval) until not IPC.Questionable.IsRunning()
+        log_(LEVEL_DEBUG, _text, "Questy stopped, running multi mode")
+        yield('/ays multi enable')
+        repeat wait(interval) until not ar_multi_mode_would_start(early_pause) and not IPC.AutoRetainer.IsBusy()
+        yield('/ays multi disable')
+        log_(LEVEL_DEBUG, _text, "Retainers finished, returning to char", char)
+        change_character(char, world)
+        log_(LEVEL_DEBUG, _text, "Character changed, restarting questy")
+        yield('/qst start')
+    end
 end

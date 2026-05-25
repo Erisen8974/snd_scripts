@@ -48,6 +48,18 @@ function stylist_update_current_gearset()
     until not invoke_ipc(STYLIST_IS_BUSY)
 end
 
+function stylist_update_all()
+    local start = os.clock()
+    Engines.Native.Run("/stylist all")
+    repeat
+        wait(0)
+    until stylist_is_busy() or start + 1 < os.clock()
+
+    while stylist_is_busy() do
+        wait(.5)
+    end
+end
+
 function stylist_is_busy()
     require_ipc(STYLIST_IS_BUSY, 'System.Boolean', {})
     return invoke_ipc(STYLIST_IS_BUSY)
@@ -63,7 +75,7 @@ function autoretainer_shutdown()
 end
 
 function ar_add_unconditional_sell(plan_name, itemid)
-    local i = get_plugin_instance("AutoRetainer")
+    local i = get_plugin_instance(AUTORETAINER)
     local im_settings = _field(i, "API", "Config", "AdditionalIMSettings")
 
     for settings in luanet.each(im_settings) do
@@ -86,35 +98,31 @@ function ar_add_unconditional_sell(plan_name, itemid)
     return false
 end
 
-function _field(o, field, ...)
-    if field == nil then
-        return o
-    end
-    local t = o:GetType()
-    local f = get_field(t, field, { private = true, static = true }, false)
-    if f == nil then
-        f = get_property(t, field, { private = true, static = true }, false)
-        if f == nil then
-            error("field or property not found", CallerName(false), o, field)
+function ar_multi_mode_would_start(venture_buffer)
+    venture_buffer = default(venture_buffer, 60)
+    local chars = IPC.AutoRetainer.GetRegisteredCharacters()
+    for cid in luanet.each(chars) do
+        local char = IPC.AutoRetainer.GetOfflineCharacterData(cid)
+        local next_ready = IPC.AutoRetainer.GetClosestRetainerVentureSecondsRemaining(cid)
+        log_(LEVEL_VERBOSE, _text, char.Name, char.Enabled, char.AnyAwaitingProcessing, next_ready)
+        if char.Enabled then
+            if char.AnyAwaitingProcessing or next_ready < venture_buffer then
+                return true
+            end
         end
     end
-    local res = f:GetValue(o)
-    if res == o then
-        error("could not get value", CallerName(false), o, field)
-    end
-    return _field(res, ...)
+    return false
 end
 
-function get_plugin_instance(plugin_name, required)
-    required = default(required, true)
-    local DalamudReflector = load_type("ECommons.Reflection.DalamudReflector")
-    local pluginManager = DalamudReflector.GetPluginManager()
-    for plugin in luanet.each(pluginManager.InstalledPlugins) do
-        if plugin.Name == plugin_name then
-            return _field(plugin, "instance")
-        end
-    end
-    if required then
-        error("Plugin not found", CallerName(false), plugin_name)
-    end
+local QUESTY = 'Questionable'
+
+function questy_stop_soon()
+    local i = get_plugin_instance(QUESTY)
+    local t = i:GetType().Assembly
+    local _serviceProvider = _field(i, "_serviceProvider")
+    local di_t = t:GetType("Questionable.DalamudInitializer")
+    local di = _serviceProvider:GetService(di_t)
+    local quest_controller = _field(di, "_questController")
+    quest_controller.StopAfterCurrentQuest = true
+    quest_controller.StopBeforeTeleport = true
 end

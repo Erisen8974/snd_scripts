@@ -629,7 +629,11 @@ function CallerName(string)
         return "(unknown caller)"
     end
     string = default(string, true)
-    return debug_info_tostring(debug.getinfo(3), string)
+    local info = debug.getinfo(3)
+    if info == nil then
+        return "(unknown caller)"
+    end
+    return debug_info_tostring(info, string)
 end
 
 function FunctionInfo(string)
@@ -637,7 +641,11 @@ function FunctionInfo(string)
         return "(unknown function)"
     end
     string = default(string, true)
-    return debug_info_tostring(debug.getinfo(2), string)
+    local info = debug.getinfo(2)
+    if info == nil then
+        return "(unknown function)"
+    end
+    return debug_info_tostring(info, string)
 end
 
 function debug_info_tostring(debug_info, always_string)

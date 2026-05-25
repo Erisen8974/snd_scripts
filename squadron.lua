@@ -343,14 +343,15 @@ function unequip_retainer()
     wait_any_addons("SelectString")
 end
 
-function equip_retainer_weapon(job, job_full)
+function equip_retainer_weapon(job, job_full, level)
+    level = default(level, 1000)
     local ti = ResetTimeout()
     SelectInList("gear", "SelectString", true)
     wait_any_addons("RetainerCharacter")
     repeat
         wait(.1)
     until GetNodeText("RetainerCharacter", 1, 108, 149, 152) == job_full
-    local p = pred_all(item_in_gearset(false), is_item_job(job), is_item_equip_slot("MainHand"))
+    local p = pred_all(item_in_gearset(false), is_item_job(job), is_item_equip_slot("MainHand"), max_item_level(level))
     while Inventory.GetInventoryContainer(InventoryType.RetainerEquippedItems).Items.Count == 0 do
         CheckTimeout(10, ti, CallerName(false), "Waiting for weapon to be in inventory for job", job_full)
         wait(.2)

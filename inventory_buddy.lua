@@ -355,13 +355,20 @@ function is_item_job(job)
     end
 end
 
+function max_item_level(max_level)
+    return function(item)
+        local equip_level = luminia_row_checked("item", item.ItemId).LevelEquip
+        return equip_level <= max_level
+    end
+end
+
 function is_item_equip_slot(slot)
     return function(item)
         local cat = luminia_row_checked("item", item.ItemId).EquipSlotCategory
         if cat.RowId == 0 then
             return nil
         end
-        return cat[slot]
+        return cat[slot] == 1
     end
 end
 
@@ -369,7 +376,10 @@ function pred_all(...)
     local pred_list = table.pack(...)
     return function(item)
         for i = 1, pred_list.n do
-            if not pred_list[i](item) then
+            local p = pred_list[i]
+            local r = p(item)
+            log_(LEVEL_VERBOSE, _text, "Checking predicate number", i, "result", r)
+            if not r then
                 return false
             end
         end
