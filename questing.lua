@@ -133,7 +133,10 @@ function questy_ar_watcher(early_pause, interval)
     require_plugins({ "Questionable", "AutoRetainer", "Lifestream" })
     interval = default(interval, 10)
     local char = Player.Entity.Name
-    local world = Player.Entity.HomeWorld
+    local world = luminia_row_checked("World", Player.Entity.HomeWorld).Name
+
+    log_(LEVEL_INFO, _text, "Starting questy AR watcher for", char, "on world", world)
+
     if not IPC.Questionable.IsRunning() then
         log_(LEVEL_DEBUG, _text, "Questy is not running, starting it")
         yield('/qst start')
