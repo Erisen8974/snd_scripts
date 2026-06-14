@@ -7,6 +7,8 @@ pcall(require, 'private/char_info')
 
 
 SCRIPT_TAG = "[EriSND]"
+MINUTES = 60
+HOURS = 60 * MINUTES
 
 -----------------------
 -- General Utilities --
@@ -348,10 +350,16 @@ function wait_ready(max_wait, seconds_ready, stationary, interval)
                 "and target", seconds_ready)
         end
         wait(interval)
-        ---@diagnostic disable-next-line: undefined-field  Vector3.Distance exists....
-        if is_busy() or (stationary and Vector3.Distance(p, Entity.Player.Position) > interval) then
-            p = Entity.Player.Position
-            ready_time = os.clock()
+        local player = Entity.Player
+        if player ~= nil then
+            local position = player.Position
+            if position ~= nil then
+                ---@diagnostic disable-next-line: undefined-field  Vector3.Distance exists....
+                if is_busy() or (stationary and Vector3.Distance(p, position) > interval) then
+                    p = position
+                    ready_time = os.clock()
+                end
+            end
         end
     until os.clock() - ready_time >= seconds_ready
 end

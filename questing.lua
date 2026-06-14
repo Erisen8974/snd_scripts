@@ -137,6 +137,7 @@ function questy_ar_watcher(early_pause, interval)
 
     log_(LEVEL_INFO, _text, "Starting questy AR watcher for", char, "on world", world)
 
+    questy_reenable()
     if not IPC.Questionable.IsRunning() then
         log_(LEVEL_DEBUG, _text, "Questy is not running, starting it")
         yield('/qst start')
@@ -145,7 +146,9 @@ function questy_ar_watcher(early_pause, interval)
     while true do
         repeat wait(interval) until ar_multi_mode_would_start(early_pause) or not IPC.Questionable.IsRunning()
         if not IPC.Questionable.IsRunning() then
-            log_(LEVEL_INFO, _text, "Questy stopped, out of quests?", char, "Starting multi mode")
+            local cur_id = IPC.Questionable.GetCurrentQuestId()
+            log_(LEVEL_INFO, _text, "Questy stopped, out of quests?", char, "Current quest id:", cur_id,
+                "Starting multi mode")
             yield('/ays multi enable')
             return
         end
@@ -153,6 +156,7 @@ function questy_ar_watcher(early_pause, interval)
         questy_stop_soon()
         repeat wait(interval) until not IPC.Questionable.IsRunning()
         log_(LEVEL_DEBUG, _text, "Questy stopped, running multi mode")
+        questy_reenable()
         yield('/ays multi enable')
         repeat wait(interval) until not ar_multi_mode_would_start(early_pause) and not IPC.AutoRetainer.IsBusy()
         yield('/ays multi disable')

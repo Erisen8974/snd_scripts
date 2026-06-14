@@ -74,6 +74,14 @@ function autoretainer_shutdown()
     return invoke_ipc(AUTORETAINER_GETCONFIG_SHUTDOWN)
 end
 
+function ar_is_active(buffer_time)
+    buffer_time = default(buffer_time, 3 * MINUTES)
+    return IPC.AutoRetainer.GetMultiModeEnabled() and (
+        IPC.AutoRetainer.IsBusy() or
+        ar_multi_mode_would_start(buffer_time)
+    )
+end
+
 function ar_add_unconditional_sell(plan_name, itemid)
     local i = get_plugin_instance(AUTORETAINER)
     local im_settings = _field(i, "API", "Config", "AdditionalIMSettings")
@@ -101,6 +109,7 @@ end
 function ar_multi_mode_would_start(venture_buffer)
     venture_buffer = default(venture_buffer, 60)
     local chars = IPC.AutoRetainer.GetRegisteredCharacters()
+    local now = os.time()
     for cid in luanet.each(chars) do
         local char = IPC.AutoRetainer.GetOfflineCharacterData(cid)
         local next_ready = IPC.AutoRetainer.GetClosestRetainerVentureSecondsRemaining(cid)
@@ -109,6 +118,13 @@ function ar_multi_mode_would_start(venture_buffer)
             if char.AnyAwaitingProcessing or next_ready < venture_buffer then
                 return true
             end
+            for sub in luanet.each(char.OfflineSubmarineData) do
+                local return_time = sub.ReturnTime
+                log_(LEVEL_VERBOSE, _text, "Submarine", return_time - now)
+                if return_time - now < venture_buffer then
+                    return true
+                end
+            end
         end
     end
     return false
@@ -116,13 +132,42 @@ end
 
 local QUESTY = 'Questionable'
 
-function questy_stop_soon()
+function _zone_has_unlocked_aetheryte()
+    local zone = Svc.ClientState.TerritoryType
+    local row = luminia_row_checked("TerritoryType", zone).Aetheryte.RowId
+    if row == 0 then
+        return false
+    end
+    return Instances.Telepo:IsAetheryteUnlocked(row)
+end
+
+function _questy_get_quest_controller()
     local i = get_plugin_instance(QUESTY)
     local t = i:GetType().Assembly
     local _serviceProvider = _field(i, "_serviceProvider")
     local di_t = t:GetType("Questionable.DalamudInitializer")
     local di = _serviceProvider:GetService(di_t)
-    local quest_controller = _field(di, "_questController")
-    quest_controller.StopAfterCurrentQuest = true
+    return _field(di, "_questController")
+end
+
+function _questy_get_duties()
+    local i = get_plugin_instance(QUESTY)
+    local t = i:GetType().Assembly
+    local _serviceProvider = _field(i, "_serviceProvider")
+    local duty_config_t = t:GetType("Questionable.Windows.ConfigComponents.DutyConfigComponent")
+    local duty_config = _serviceProvider:GetService(duty_config_t)
+    return _field(duty_config, "Configuration", "Duties")
+end
+
+function questy_stop_soon()
+    local quest_controller = _questy_get_quest_controller()
+    local duties = _questy_get_duties()
+    duties.RunInstancedContentWithAutoDuty = false
+    --quest_controller.StopAfterCurrentQuest = true
     quest_controller.StopBeforeTeleport = true
+end
+
+function questy_reenable()
+    local duties = _questy_get_duties()
+    duties.RunInstancedContentWithAutoDuty = true
 end

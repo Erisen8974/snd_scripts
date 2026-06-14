@@ -272,7 +272,7 @@ end
 -- dont preserve too long cause it can change, but its a little slow to generate
 _GEARSET_CACHE = {}
 _GEARSET_LAST_UPDATE = os.clock()
-
+_GEARSET_MISSING_OKAY = false
 
 function resolve_gearset_items(number)
     if _GEARSET_LAST_UPDATE + 10 <= os.clock() then
@@ -308,6 +308,10 @@ function resolve_gearset_items(number)
         for slot, gid in pairs(gearset_ids) do
             if gid ~= nil then
                 log_(LEVEL_ERROR, _text, "Did not find item for slot", slot, "with id", gid, "in gearset", number)
+                if not _GEARSET_MISSING_OKAY then
+                    error("GearsetItemNotFound", CallerName(false), "Did not find item for slot", slot, "with id", gid,
+                        "in gearset", number)
+                end
             end
         end
         _GEARSET_CACHE[number] = items

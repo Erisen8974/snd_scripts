@@ -106,12 +106,22 @@ function _field(o, field, ...)
 end
 
 function get_plugin_instance(plugin_name, required)
+    local plugin = get_plugin_raw(plugin_name, required, true)
+    if plugin ~= nil then
+        return _field(plugin, "instance")
+    end
+end
+
+function get_plugin_raw(plugin_name, required, need_loaded)
+    need_loaded = default(need_loaded, true)
     required = default(required, true)
     local DalamudReflector = load_type("ECommons.Reflection.DalamudReflector")
     local pluginManager = DalamudReflector.GetPluginManager()
     for plugin in luanet.each(pluginManager.InstalledPlugins) do
         if plugin.Name == plugin_name then
-            return _field(plugin, "instance")
+            if plugin.IsLoaded or not need_loaded then
+                return plugin
+            end
         end
     end
     if required then
