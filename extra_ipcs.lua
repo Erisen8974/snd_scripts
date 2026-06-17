@@ -171,3 +171,30 @@ function questy_reenable()
     local duties = _questy_get_duties()
     duties.RunInstancedContentWithAutoDuty = true
 end
+
+function questy_stop_blocking(interval)
+    local interval = default(interval, 10)
+    questy_stop_soon()
+    repeat wait(interval) until not IPC.Questionable.IsRunning()
+    log_(LEVEL_DEBUG, _text, "Questy stopped, running multi mode")
+    questy_reenable()
+end
+
+local LIFESTREAM = 'Lifestream'
+
+function lifestream_command_blocking(command, player_ready)
+    running_lifestream = true
+    player_ready = default(player_ready, true)
+    log_(LEVEL_DEBUG, _text, "Executing Lifestream command", command)
+    IPC.Lifestream.ExecuteCommand(command)
+
+    repeat wait(.1) until IPC.Lifestream.IsBusy()
+    log_(LEVEL_DEBUG, _text, "Lifestream command is running", command)
+    repeat wait(1) until not IPC.Lifestream.IsBusy()
+    log_(LEVEL_DEBUG, _text, "Lifestream command finished", command)
+
+    if player_ready then
+        wait_ready(30, 1, true, .1)
+        log_(LEVEL_DEBUG, _text, "Lifestream command player ready", command)
+    end
+end

@@ -342,7 +342,7 @@ function walk_path(path, fly, range, stop_if_stuck, ref_point, max_stuck_time)
     while (IPC.vnavmesh.IsRunning() or IPC.vnavmesh.PathfindInProgress()) do
         CheckTimeout(60, ti, CallerName(false), "Waiting for pathfind")
         local cur_pos = Player.Entity.Position
-        if range ~= nil and Vector3.Distance(Entity.Player.Position, ref_point) <= range then
+        if range ~= nil and Vector3.Distance(cur_pos, ref_point) <= range then
             IPC.vnavmesh.Stop()
         end
         if not fly or GetCharacterCondition(4) then
@@ -428,7 +428,7 @@ function WalkTo(x, y, z, range)
         p = pathfind_with_tolerance(pos, false, range)
     else
         log_(LEVEL_VERBOSE, _text, "Finding path to", pos)
-        p = await(IPC.vnavmesh.Pathfind(Entity.Player.Position, pos, false))
+        p = await(IPC.vnavmesh.Pathfind(Player.Entity.Position, pos, false))
     end
     if p.Count == 0 then
         error("No path found", CallerName(false), "x:", x, "y:", y, "z:", z, "range:", range)
@@ -445,7 +445,7 @@ function WalkTo(x, y, z, range)
 
     while (IPC.vnavmesh.IsRunning() or IPC.vnavmesh.PathfindInProgress()) do
         CheckTimeout(30, ti, CallerName(false), "Waiting for pathfind")
-        if range ~= nil and Vector3.Distance(Entity.Player.Position, pos) <= range then
+        if range ~= nil and Vector3.Distance(Player.Entity.Position, pos) <= range then
             log_(LEVEL_VERBOSE, _text, "Stopping path because within range", range, "of target")
             IPC.vnavmesh.Stop()
         end
@@ -465,7 +465,7 @@ function pathfind_with_tolerance(vec3, fly, tolerance)
             'System.Single'
         }
     )
-    return await(invoke_ipc('vnavmesh.Nav.PathfindWithTolerance', Entity.Player.Position, vec3, fly, tolerance))
+    return await(invoke_ipc('vnavmesh.Nav.PathfindWithTolerance', Player.Entity.Position, vec3, fly, tolerance))
 end
 
 function ZoneTransition()

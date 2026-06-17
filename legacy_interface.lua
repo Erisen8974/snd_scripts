@@ -26,16 +26,16 @@ function GetCharacterCondition(cond)
 end
 
 function GetDistanceToPoint(x, y, z)
-    if Entity == nil then
+    if Player == nil then
         return nil
     end
-    if Entity.Player == nil then
+    if Player.Entity == nil then
         return nil
     end
-    if Entity.Player.Position == nil then
+    if Player.Entity.Position == nil then
         return nil
     end
-    return Vector3.Distance(Entity.Player.Position, Vector3(x, y, z))
+    return Vector3.Distance(Player.Entity.Position, Vector3(x, y, z))
 end
 
 function IsPlayerAvailable()

@@ -287,8 +287,7 @@ function char_homeworld(char)
     return char_info.Homeworld
 end
 
-function change_character(char, world, max_time)
-    max_time = default(max_time, 10 * 60)
+function change_character(char, world)
     local ti = ResetTimeout()
     char = char_canonical_name(char)
     world = title_case(default(world, char_homeworld(char)))
@@ -302,27 +301,7 @@ function change_character(char, world, max_time)
         return
     end
 
-    running_lifestream = true
-    IPC.Lifestream.ExecuteCommand(target)
-
-    repeat
-        CheckTimeout(max_time, ti, "ZoneTransition", "Waiting for lifestream to start")
-        wait(.1)
-    until IPC.Lifestream.IsBusy()
-
-    repeat
-        CheckTimeout(max_time, ti, "ZoneTransition", "Waiting for lifestream to finish")
-        wait(10)
-    until not IPC.Lifestream.IsBusy()
-    log_(LEVEL_DEBUG, _text, "Lifestream done")
-
-    repeat
-        CheckTimeout(max_time, ti, "ZoneTransition", "Waiting for zone transition to end")
-        wait(5)
-    until IsPlayerAvailable()
-
-    log_(LEVEL_DEBUG, _text, "relog done")
-    wait_ready(max_time, 2)
+    lifestream_command_blocking(target)
     log_(LEVEL_DEBUG, _text, "Ready!")
 end
 
@@ -340,7 +319,16 @@ function wait_ready(max_wait, seconds_ready, stationary, interval)
     interval = default(interval, 1)
     local ready_time = os.clock()
     local ti = nil
-    local p = Entity.Player.Position
+    local p = nil
+    local player = Player.Entity
+    if player ~= nil then
+        local position = player.Position
+        if position ~= nil then
+            p = position
+        end
+    else
+        log_(LEVEL_ERROR, _text, "Player.Entity is nil")
+    end
     if max_wait ~= nil then
         ti = ResetTimeout()
     end
@@ -350,15 +338,21 @@ function wait_ready(max_wait, seconds_ready, stationary, interval)
                 "and target", seconds_ready)
         end
         wait(interval)
-        local player = Entity.Player
+        local player = Player.Entity
         if player ~= nil then
             local position = player.Position
             if position ~= nil then
-                ---@diagnostic disable-next-line: undefined-field  Vector3.Distance exists....
-                if is_busy() or (stationary and Vector3.Distance(p, position) > interval) then
+                if p ~= nil then
+                    ---@diagnostic disable-next-line: undefined-field  Vector3.Distance exists....
+                    if is_busy() or (stationary and Vector3.Distance(p, position) > interval) then
+                        p = position
+                        ready_time = os.clock()
+                    end
+                else
                     p = position
-                    ready_time = os.clock()
                 end
+            else
+                log_(LEVEL_ERROR, _text, "Player.Entity is nil")
             end
         end
     until os.clock() - ready_time >= seconds_ready
