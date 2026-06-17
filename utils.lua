@@ -92,6 +92,7 @@ function wait_message(after, timeout, ...)
     local found = false
 
     timeout = default(timeout, 10)
+    wait_any_addons("ChatLogPanel_3")
     repeat
         CheckTimeout(timeout, ti, CallerName(false), "Waiting for message '" .. after .. "' followed by", ...)
         wait(.1)
@@ -325,9 +326,11 @@ function wait_ready(max_wait, seconds_ready, stationary, interval)
         local position = player.Position
         if position ~= nil then
             p = position
+        else
+            log_(LEVEL_ERROR, _text, "Player.Entity.Position is nil - init")
         end
     else
-        log_(LEVEL_ERROR, _text, "Player.Entity is nil")
+        log_(LEVEL_ERROR, _text, "Player.Entity is nil - init")
     end
     if max_wait ~= nil then
         ti = ResetTimeout()
@@ -345,15 +348,24 @@ function wait_ready(max_wait, seconds_ready, stationary, interval)
                 if p ~= nil then
                     ---@diagnostic disable-next-line: undefined-field  Vector3.Distance exists....
                     if is_busy() or (stationary and Vector3.Distance(p, position) > interval) then
+                        log_(LEVEL_DEBUG, _text, "not ready resetting clock")
                         p = position
                         ready_time = os.clock()
+                    else
+                        log_(LEVEL_DEBUG, _text, "ready tick", os.clock() - ready_time, "target", seconds_ready)
                     end
                 else
                     p = position
+                    ready_time = os.clock()
+                    log_(LEVEL_DEBUG, _text, "Initial position was nil, setting")
                 end
             else
-                log_(LEVEL_ERROR, _text, "Player.Entity is nil")
+                ready_time = os.clock()
+                log_(LEVEL_ERROR, _text, "Player.Entity.Position is nil")
             end
+        else
+            ready_time = os.clock()
+            log_(LEVEL_ERROR, _text, "Player.Entity is nil")
         end
     until os.clock() - ready_time >= seconds_ready
 end

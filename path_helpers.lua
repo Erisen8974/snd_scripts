@@ -494,7 +494,7 @@ function ZoneTransition()
         wait(0.1)
     until IsPlayerAvailable()
     log_(LEVEL_DEBUG, _text, "Teleport done")
-    wait_ready(30, 2)
+    wait_ready(30, .5, true, .1)
     log_(LEVEL_DEBUG, _text, "Ready!")
 end
 
@@ -613,16 +613,16 @@ end
 
 function path_distance_to(vec3, fly)
     fly = default(fly, false)
-    path = await(IPC.vnavmesh.Pathfind(Entity.Player.Position, vec3, fly))
+    path = await(IPC.vnavmesh.Pathfind(Player.Entity.Position, vec3, fly))
     if path.Count == 0 then -- if theres no path use the cartesian distance
-        return Vector3.Distance(Entity.Player.Position, vec3)
+        return Vector3.Distance(Player.Entity.Position, vec3)
     end
     return path_length(path)
 end
 
 function path_length(path)
     local dist = 0
-    local prev_point = Entity.Player.Position
+    local prev_point = Player.Entity.Position
     for point in luanet.each(path) do
         dist = dist + Vector3.Distance(prev_point, point)
         prev_point = point
@@ -637,7 +637,7 @@ function path_dist_to_obj(fly)
 end
 
 function direct_distance(obj)
-    return Vector3.Distance(Entity.Player.Position, obj.Position)
+    return Vector3.Distance(Player.Entity.Position, obj.Position)
 end
 
 function is_alive(obj)

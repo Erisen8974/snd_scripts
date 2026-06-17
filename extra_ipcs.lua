@@ -182,19 +182,23 @@ end
 
 local LIFESTREAM = 'Lifestream'
 
-function lifestream_command_blocking(command, player_ready)
-    running_lifestream = true
-    player_ready = default(player_ready, true)
+function lifestream_command_blocking(command, player_ready, max_wait)
     log_(LEVEL_DEBUG, _text, "Executing Lifestream command", command)
     IPC.Lifestream.ExecuteCommand(command)
 
+    lifestream_block(player_ready, max_wait)
+end
+
+function lifestream_block(player_ready, max_wait)
+    running_lifestream = true
+    player_ready = default(player_ready, true)
     repeat wait(.1) until IPC.Lifestream.IsBusy()
-    log_(LEVEL_DEBUG, _text, "Lifestream command is running", command)
+    log_(LEVEL_DEBUG, _text, "Lifestream command is running")
     repeat wait(1) until not IPC.Lifestream.IsBusy()
-    log_(LEVEL_DEBUG, _text, "Lifestream command finished", command)
+    log_(LEVEL_DEBUG, _text, "Lifestream command finished")
 
     if player_ready then
-        wait_ready(30, 1, true, .1)
-        log_(LEVEL_DEBUG, _text, "Lifestream command player ready", command)
+        wait_ready(max_wait, 1, true, .5)
+        log_(LEVEL_DEBUG, _text, "Lifestream command player ready")
     end
 end
