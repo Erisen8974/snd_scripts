@@ -202,3 +202,27 @@ function lifestream_block(player_ready, max_wait)
         log_(LEVEL_DEBUG, _text, "Lifestream command player ready")
     end
 end
+
+local AUTODUTY = 'AutoDuty'
+
+function ad_helper_running()
+    local ad = get_plugin_instance(AUTODUTY)
+    local ass = ad:GetType().Assembly
+    local helper = ass:GetType("AutoDuty.Helpers.ActiveHelper")
+    local m = get_method(helper, "AnyHelperRunning", { static = true })
+    local arg_array = luanet.make_array(Object, {})
+    local res = m:Invoke(helper, arg_array)
+    return res
+end
+
+function wait_ad(command)
+    local s = os.clock()
+    if command then
+        log_(LEVEL_DEBUG, _text, 'Executing AutoDuty command', command)
+        yield("/ad " .. command)
+    end
+    repeat wait(.1) until ad_helper_running() or os.clock() - s > 1
+    log_(LEVEL_DEBUG, _text, 'AD Started (or time)')
+    repeat wait(1) until not ad_helper_running()
+    log_(LEVEL_DEBUG, _text, 'AD Done')
+end

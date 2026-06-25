@@ -15,12 +15,16 @@ function OpenShop(shopkeep_name, shop_names, callbacks)
     local ti = ResetTimeout()
     while true do
         CheckTimeout(30, ti, CallerName(false), "Waiting for shop addon:", table.unpack(shop_names))
+        local addon = nil
+        repeat
+            CheckTimeout(5, ti, CallerName(false), "Opening shop with", shopkeep_name)
+            local npc = get_closest_entity(shopkeep_name, true)
+            npc:SetAsTarget()
+            npc:Interact()
+            wait(.1)
+            addon = any_addons_ready("Talk", table.unpack(all_names))
+        until addon ~= nil
 
-        local npc = get_closest_entity(shopkeep_name, true)
-        npc:SetAsTarget()
-        npc:Interact()
-
-        local addon = wait_any_addons("Talk", table.unpack(all_names))
         if list_contains(shop_names, addon) then
             return true
         elseif addon == "Talk" then
@@ -29,7 +33,6 @@ function OpenShop(shopkeep_name, shop_names, callbacks)
             local callback = callbacks[addon]
             SafeCallback(addon, true, table.unpack(callback))
         end
-        wait(.1)
     end
 end
 
@@ -48,4 +51,12 @@ function CloseExchanges()
     if IsAddonReady("InclusionShop") then
         yield("/callback InclusionShop true -1")
     end
+end
+
+function is_auto_repairing()
+    local rep = Addons.GetAddon("RepairAuto")
+    if rep == nil or not rep.Ready then
+        return false
+    end
+    return rep:GetAtkValue(0).ValueString ~= "1"
 end

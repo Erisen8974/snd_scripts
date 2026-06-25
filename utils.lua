@@ -1,4 +1,9 @@
+if ___UTILS_IMPORTED then -- stop if importing circular dependencies
+    return
+end
+___UTILS_IMPORTED = true
 require 'legacy_interface'
+require 'extra_ipcs'
 
 import 'System.Numerics'
 
