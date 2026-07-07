@@ -1,5 +1,6 @@
 require 'utils'
 require 'hard_ipc'
+require 'inventory_buddy'
 import "System"
 
 
@@ -37,6 +38,7 @@ local STYLIST_IS_BUSY = STYLIST .. '.IsBusy'
 local STYLIST_UPDATE_CURRENT_GEARSET = STYLIST .. '.UpdateCurrentGearset'
 
 function stylist_update_current_gearset()
+    reset_gearset_cache()
     Player.Gearset:Update()
     require_ipc(STYLIST_IS_BUSY, 'System.Boolean', {})
     require_ipc(STYLIST_UPDATE_CURRENT_GEARSET, nil, { 'System.Boolean' })
@@ -49,6 +51,7 @@ function stylist_update_current_gearset()
 end
 
 function stylist_update_all()
+    reset_gearset_cache()
     local start = os.clock()
     Engines.Native.Run("/stylist all")
     repeat

@@ -223,8 +223,15 @@ function item_id_range(lowest_item_id, highest_item_id, in_range)
     end
 end
 
-RaptureGearsetModule_GearsetItemIndex = load_type(
-    "FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule+GearsetItemIndex")
+_RaptureGearsetModule_GearsetItemIndex = nil
+
+local function RaptureGearsetModule_GearsetItemIndex()
+    if _RaptureGearsetModule_GearsetItemIndex == nil then
+        _RaptureGearsetModule_GearsetItemIndex = load_type(
+            "FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule+GearsetItemIndex")
+    end
+    return _RaptureGearsetModule_GearsetItemIndex
+end
 
 function current_gearset_index()
     local RaptureGearsetModule = cs_instance("FFXIVClientStructs.FFXIV.Client.UI.Misc.RaptureGearsetModule")
@@ -254,18 +261,18 @@ function resolve_gearset_ids(number)
     end
 
     return {
-        MainHand = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.MainHand),
-        OffHand = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.OffHand),
-        Head = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Head),
-        Body = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Body),
-        Hands = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Hands),
-        Legs = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Legs),
-        Feet = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Feet),
-        Ears = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Ears),
-        Neck = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Neck),
-        Wrists = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.Wrists),
-        LeftRing = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.RingLeft),
-        RightRing = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex.RingRight),
+        MainHand = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex().MainHand),
+        OffHand = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex().OffHand),
+        Head = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex().Head),
+        Body = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex().Body),
+        Hands = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex().Hands),
+        Legs = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex().Legs),
+        Feet = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex().Feet),
+        Ears = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex().Ears),
+        Neck = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex().Neck),
+        Wrists = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex().Wrists),
+        LeftRing = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex().RingLeft),
+        RightRing = _resolve_gearset_ids__get_item_id(RaptureGearsetModule_GearsetItemIndex().RingRight),
     }
 end
 
@@ -274,10 +281,14 @@ _GEARSET_CACHE = {}
 _GEARSET_LAST_UPDATE = os.clock()
 _GEARSET_MISSING_OKAY = false
 
+function reset_gearset_cache()
+    _GEARSET_CACHE = {}
+    _GEARSET_LAST_UPDATE = os.clock()
+end
+
 function resolve_gearset_items(number)
     if _GEARSET_LAST_UPDATE + 10 <= os.clock() then
-        _GEARSET_CACHE = {}
-        _GEARSET_LAST_UPDATE = os.clock()
+        reset_gearset_cache()
     end
     if _GEARSET_CACHE[number] == nil then
         local gearset_ids = resolve_gearset_ids(number)

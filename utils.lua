@@ -4,6 +4,7 @@ end
 ___UTILS_IMPORTED = true
 require 'legacy_interface'
 require 'extra_ipcs'
+require 'inventory_buddy'
 
 import 'System.Numerics'
 
@@ -294,6 +295,7 @@ function char_homeworld(char)
 end
 
 function change_character(char, world)
+    reset_gearset_cache()
     local ti = ResetTimeout()
     char = char_canonical_name(char)
     world = title_case(default(world, char_homeworld(char)))

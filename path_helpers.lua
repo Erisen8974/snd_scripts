@@ -9,6 +9,18 @@ local WALK_THRESHOLD = 35
 local FLY_THRESHOLD = 100
 
 
+local function should_fly(dist)
+    --far enough
+    if dist > FLY_THRESHOLD then
+        return true
+    end
+    --already mounted, fly unless were right there
+    if GetCharacterCondition(4) and dist > SPRINT_THRESHOLD then
+        return true
+    end
+    return false
+end
+
 -- TODO: pathfind to get accurate distance, can we do that in a zone were not in?
 -- TODO: Option for flight in zones that allow it
 function smart_path(place_name, x, y, z)
@@ -224,26 +236,38 @@ function move_near_point(spot, radius, fly)
     if fly then
         log_(LEVEL_DEBUG, _text, "Looking for mesh point in range", radius, "of", target)
         fly_result = IPC.vnavmesh.NearestPoint(target, radius, radius)
+        if fly_result == nil then
+            log_(LEVEL_DEBUG, _text, "No mesh point found in range", radius, "of", target, "using original target")
+            fly_result = target
+        end
     end
     log_(LEVEL_DEBUG, _text, "Looking for floor point in range", radius, "of", target)
     result = IPC.vnavmesh.PointOnFloor(target, false, radius)
 
-    if result == nil or (fly and fly_result == nil) then
+    if result == nil and (not fly or fly_result == nil) then
         log_(LEVEL_ERROR, _text, "No valid point found in range", radius, "of", spot, "searched from", target)
         return false
     end
     log_(LEVEL_DEBUG, _text, "Found point in area", result, fly_result)
     local path, fly_path
-    if fly_result == nil or Vector3.Distance(Player.Entity.Position, result) < FLY_THRESHOLD then
+    if fly_result == nil or not should_fly(Vector3.Distance(Player.Entity.Position, result)) then
         path = pathfind_with_tolerance(result, false, radius)
     end
-    if fly_result ~= nil and (path == nil or path_length(path) > FLY_THRESHOLD) then
+    if fly_result ~= nil and (path == nil or should_fly(path_length(path))) then
         fly_path = pathfind_with_tolerance(fly_result, true, radius)
-        walk_path(fly_path, true, radius, 0.01, spot)
-    else
+        if fly_path ~= nil then
+            log_(LEVEL_DEBUG, _list, fly_path, "Flying path")
+            walk_path(fly_path, true, radius, 0.01, spot)
+            return true
+        end
+        log_(LEVEL_ERROR, _text, "Should fly, but no valid flying path found")
+    end
+    if path ~= nil then
+        log_(LEVEL_DEBUG, _list, path, "Walking path")
         walk_path(path, false, radius, 0.01, spot)
     end
-    return true
+    log_(LEVEL_ERROR, _text, "No valid path found")
+    return false
 end
 
 function jump_to_point(p, runup, retry)
@@ -465,7 +489,12 @@ function pathfind_with_tolerance(vec3, fly, tolerance)
             'System.Single'
         }
     )
-    return await(invoke_ipc('vnavmesh.Nav.PathfindWithTolerance', Player.Entity.Position, vec3, fly, tolerance))
+    res = await(invoke_ipc('vnavmesh.Nav.PathfindWithTolerance', Player.Entity.Position, vec3, fly, tolerance))
+    if res == nil or res.Count == 0 then
+        log_(LEVEL_DEBUG, _text, "No path found to", vec3, "fly:", fly, "tolerance:", tolerance, "res:", res)
+        return nil
+    end
+    return res
 end
 
 function ZoneTransition()
