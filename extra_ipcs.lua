@@ -239,9 +239,26 @@ function glamourlog_is_busy()
     return invoke_ipc(GLAMOURLOG_IS_BUSY)
 end
 
+function glamourlog_block(command, max_start_delay, command_frequency)
+    local s = os.clock()
+    local last_command = 0
+    max_start_delay = default(max_start_delay, 1)
+    command_frequency = default(command_frequency, 1)
+    repeat
+        if command and os.clock() - last_command > command_frequency then
+            log_(LEVEL_DEBUG, _text, 'Executing GlamourLog command', command)
+            yield("/gl " .. command)
+            last_command = os.clock()
+        end
+        wait(.1)
+    until glamourlog_is_busy() or os.clock() - s > max_start_delay
+    log_(LEVEL_DEBUG, _text, 'GlamourLog Started (or time)')
+    repeat wait(.1) until not glamourlog_is_busy()
+    log_(LEVEL_DEBUG, _text, 'GlamourLog Done')
+end
+
 function glamourlog_entrust_all(block)
     block = default(block, false)
-    local s = os.clock()
     require_ipc(GLAMOURLOG_ENTRUST_ALL, 'System.Boolean', {})
     local res = invoke_ipc(GLAMOURLOG_ENTRUST_ALL)
     if not res then
@@ -249,8 +266,7 @@ function glamourlog_entrust_all(block)
         return false
     end
     if block then
-        repeat wait(.1) until glamourlog_is_busy() or os.clock() - s > 1
-        repeat wait(.1) until not glamourlog_is_busy()
+        glamourlog_block()
     end
     return true
 end
