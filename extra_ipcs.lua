@@ -229,3 +229,28 @@ function wait_ad(command)
     repeat wait(1) until not ad_helper_running()
     log_(LEVEL_DEBUG, _text, 'AD Done')
 end
+
+local GLAMOURLOG = 'GlamourLog'
+local GLAMOURLOG_IS_BUSY = GLAMOURLOG .. '.IsBusy'
+local GLAMOURLOG_ENTRUST_ALL = GLAMOURLOG .. '.EntrustAll'
+
+function glamourlog_is_busy()
+    require_ipc(GLAMOURLOG_IS_BUSY, 'System.Boolean', {})
+    return invoke_ipc(GLAMOURLOG_IS_BUSY)
+end
+
+function glamourlog_entrust_all(block)
+    block = default(block, false)
+    local s = os.clock()
+    require_ipc(GLAMOURLOG_ENTRUST_ALL, 'System.Boolean', {})
+    local res = invoke_ipc(GLAMOURLOG_ENTRUST_ALL)
+    if not res then
+        log_(LEVEL_ERROR, _text, "GlamourLog EntrustAll failed")
+        return false
+    end
+    if block then
+        repeat wait(.1) until glamourlog_is_busy() or os.clock() - s > 1
+        repeat wait(.1) until not glamourlog_is_busy()
+    end
+    return true
+end
