@@ -25,7 +25,7 @@ function wait_gbr_idle(max_wait)
     end
     repeat
         if ti ~= nil then
-            CheckTimeout(max_wait, ti, CallerName(), "wait_gbr_idle timed out")
+            CheckTimeout(max_wait, ti, "wait_gbr_idle timed out")
         end
         wait(1)
         local waiting = invoke_ipc(GBR_WAITING)
@@ -45,7 +45,7 @@ function stylist_update_current_gearset()
     local ti = ResetTimeout()
     invoke_ipc(STYLIST_UPDATE_CURRENT_GEARSET, true)
     repeat
-        CheckTimeout(30, ti, CallerName(), "Stylist is busy")
+        CheckTimeout(30, ti, "Stylist is busy")
         wait(0.5)
     until not invoke_ipc(STYLIST_IS_BUSY)
 end

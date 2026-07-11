@@ -26,8 +26,7 @@ function do_wt(gearset)
     end
     while wt_count() < 9 do
         if not wt_duty() then
-            log("No Possible Duties", default(CallerName(false), FunctionInfo(true)),
-                "Failed to find a duty to fill out wt bingo", wt_count(), 'of 9 done')
+            log("No Possible Duties", "Failed to find a duty to fill out wt bingo", wt_count(), 'of 9 done')
             return false
         end
     end
@@ -68,7 +67,7 @@ function get_wt()
         "Going to Khloe")
 
     if Player.Bingo.HasWeeklyBingoJournal and not Player.Bingo.IsWeeklyBingoExpired then
-        error("AlreadyHaveWT", CallerName(false),
+        error("AlreadyHaveWT",
             "Weekly Bingo Journal already exists and is not expired, turn in first")
     end
 
@@ -77,7 +76,7 @@ function get_wt()
         entity:SetAsTarget()
         entity:Interact()
         wait(.1)
-        CheckTimeout(2, ti, "AcceptQuest", "Talking to Khloe Aliapoh didnt work")
+        CheckTimeout(2, ti, "Talking to Khloe Aliapoh didnt work")
         wait(.1)
     until IsAddonReady("Talk") or IsAddonReady("SelectString")
 
@@ -90,7 +89,7 @@ function get_wt()
 
     local ti = ResetTimeout()
     repeat
-        CheckTimeout(10, ti, "GetWeeklyBingoJournal", "Waiting for Weekly Bingo Journal to be received")
+        CheckTimeout(10, ti, "Waiting for Weekly Bingo Journal to be received")
         close_talk()
         wait(.1)
     until not is_busy() and Player.Bingo.HasWeeklyBingoJournal
@@ -184,7 +183,7 @@ function setup_content(type, unsync)
         IPC.AutoDuty.SetConfig("dutyModeEnum", "Trial")
         IPC.AutoDuty.SetConfig("Unsynced", "True")
     else
-        error("NotImplemented", CallerName(false), "Duty type", type, unsync, "not configured")
+        error("NotImplemented", "Duty type", type, unsync, "not configured")
     end
 end
 
@@ -212,7 +211,7 @@ end
 function get_duty_row(duty_id)
     local duty = Excel.GetRow("InstanceContent", duty_id)
     if duty == nil then
-        return error("InvalidDuty", CallerName(false), "no duty with ID", duty_id)
+        return error("InvalidDuty", "no duty with ID", duty_id)
     end
     return duty.ContentFinderCondition
 end
@@ -220,7 +219,7 @@ end
 function get_content_row(content_id)
     local duty = Excel.GetRow("TerritoryType", content_id)
     if duty == nil then
-        return error("InvalidDuty", CallerName(false), "no duty with territory ID", content_id)
+        return error("InvalidDuty", "no duty with territory ID", content_id)
     end
     return duty.ContentFinderCondition
 end
@@ -238,7 +237,7 @@ function wt_pick_high_level_duty(level)
     elseif level == 100 then
         return get_content_row(1266) --The Underkeep
     end
-    error("NotImplemented", nil, "High level duty Lv.", level, "is not implemented")
+    error("NotImplemented", "High level duty Lv.", level, "is not implemented")
 end
 
 function wt_pick_leveling_duty(level)
@@ -249,7 +248,7 @@ function wt_pick_leveling_duty(level)
     elseif level == 81 then
         return get_content_row(952)  -- Tower of Zot
     end
-    error("NotImplemented", nil, "Leveling duty Lv.", level, "is not implemented")
+    error("NotImplemented", "Leveling duty Lv.", level, "is not implemented")
 end
 
 function extract_level(duty)
@@ -302,7 +301,7 @@ function raid_id_to_duty(raid_id)
         -- Edens Promise
         return get_content_row(943) -- Litany
     end
-    error("NotImplemented", nil, "Raid", raid_id, "is not implemented")
+    error("NotImplemented", "Raid", raid_id, "is not implemented")
 end
 
 -- I dont think they use most of these anymore, so just crash and implement it when they come up.

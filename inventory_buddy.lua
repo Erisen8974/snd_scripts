@@ -153,7 +153,7 @@ function equip_gearset(gearset_name, update_after)
     for gs in luanet.each(Player.Gearsets) do
         if gs.Name == gearset_name then
             repeat
-                CheckTimeout(10, ti, CallerName(false), "Couldnt equip gearset:", gearset_name)
+                CheckTimeout(10, ti, "Couldnt equip gearset:", gearset_name)
                 gs:Equip()
                 wait_ready(10, 1)
             until Player.Gearset.Name == gearset_name
@@ -177,7 +177,7 @@ function equip_classjob(classjob_abrev, update_after)
             gearset_name = gs.Name
             log_(LEVEL_INFO, _text, "Equipping gearset", gearset_name, "for class/job", classjob_abrev)
             repeat
-                CheckTimeout(10, ti, CallerName(false), "Couldnt equip gearset:", gearset_name)
+                CheckTimeout(10, ti, "Couldnt equip gearset:", gearset_name)
                 gs:Equip()
                 wait(0.3)
                 yesno = Addons.GetAddon("SelectYesno")
@@ -320,7 +320,7 @@ function resolve_gearset_items(number)
             if gid ~= nil then
                 log_(LEVEL_ERROR, _text, "Did not find item for slot", slot, "with id", gid, "in gearset", number)
                 if not _GEARSET_MISSING_OKAY then
-                    error("GearsetItemNotFound", CallerName(false), "Did not find item for slot", slot, "with id", gid,
+                    error("GearsetItemNotFound", "Did not find item for slot", slot, "with id", gid,
                         "in gearset", number)
                 end
             end
@@ -466,11 +466,11 @@ end
 
 function move_partial_stack(src_inv, src_slot, count)
     if not any_addons_ready("InventoryRetainer") then
-        error("RetainerInvNotOpen", CallerName(false), "Must have the retainer inventory panel open")
+        error("RetainerInvNotOpen", "Must have the retainer inventory panel open")
     end
     local available = Inventory.GetInventoryItemBySlot(src_inv, src_slot).Count
     if available <= count then
-        error("NotEnoughItems", CallerName(false), "Requested partial move", count, "but slot only has", available)
+        error("NotEnoughItems", "Requested partial move", count, "but slot only has", available)
     end
     local menu_entry = "Retrieve Quantity"
     if list_contains({ InventoryType.Crystals, InventoryType.RetainerCrystals }, src_inv) then
@@ -511,11 +511,11 @@ function move_items(source_inv, dest_inv, pred, count)
     while source_idx <= #source_inv do
         local sourceinv = Inventory.GetInventoryContainer(source_inv[source_idx])
         if sourceinv == nil then
-            error("No inventory", CallerName(false), source_inv[source_idx])
+            error("No inventory", source_inv[source_idx])
         else
             destinv = Inventory.GetInventoryContainer(dest_inv[dest_idx])
             if destinv == nil then
-                error("No inventory", CallerName(false), dest_inv[dest_idx])
+                error("No inventory", dest_inv[dest_idx])
             end
             for item in luanet.each(sourceinv.Items) do
                 long_task_delay()
@@ -538,7 +538,7 @@ function move_items(source_inv, dest_inv, pred, count)
                             if dest_idx <= #dest_inv then
                                 destinv = Inventory.GetInventoryContainer(dest_inv[dest_idx])
                                 if destinv == nil then
-                                    error("No inventory", CallerName(false), dest_inv[dest_idx])
+                                    error("No inventory", dest_inv[dest_idx])
                                 end
                             end
                         end
@@ -631,4 +631,32 @@ function collect_reward_mail()
         wait(.1)
     until count == 0
     close_addon("LetterList")
+end
+
+function entrust_glamours()
+    lifestream_command_blocking("inn")
+    local p1 = Entity.GetEntityByName("Armoire")
+    if p1 == nil then
+        error("Armoire Missing", "Couldn't find Armoire entity")
+    end
+    p1 = p1.Position
+    if p1 == nil then
+        error("Armoire Missing", "Couldn't find Armoire entity position")
+    end
+    local p2 = Entity.GetEntityByName("Glamour Dresser")
+    if p2 == nil then
+        error("Glamour Dresser Missing", "Couldn't find Glamour Dresser entity")
+    end
+    p2 = p2.Position
+    if p2 == nil then
+        error("Glamour Dresser Missing", "Couldn't find Glamour Dresser entity position")
+    end
+    local mid = (p1 + p2) / 2
+    move_near_point(mid, 2)
+    OpenShop('Armoire', 'Cabinet', { SelectString = { 0 } })
+    glamourlog_block('store', 5)
+    close_addons({ 'Cabinet' })
+    OpenShop('Glamour Dresser', 'MiragePrismPrismBox', {})
+    glamourlog_block('store', 5)
+    close_addons({ 'MiragePrismPrismBox' })
 end

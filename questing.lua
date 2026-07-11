@@ -37,7 +37,7 @@ function move_to_quest_giver(path)
     if Svc.ClientState.TerritoryType ~= path.TerritoryId then
         local a = nearest_aetherite(path.TerritoryId, path.Position)
         if a == nil then
-            error("NoAetheryte", CallerName(false), "No aetherite found for", path.TerritoryId)
+            error("NoAetheryte", "No aetherite found for", path.TerritoryId)
         end
         repeat
             Instances.Telepo:Teleport(a.AetherId, 0) -- IDK what the sub index is. if things break its probably that.
@@ -61,7 +61,7 @@ function GetBeastTribeQuest(path, n, class, one_per)
         elseif path.Category == CATEGORY_CRAFTING then
             class = DEFAULT_CRAFT
         else
-            error("NoClass", CallerName(false), "No class specified in call or path")
+            error("NoClass", "No class specified in call or path")
         end
     end
     yield("/at y")
@@ -89,13 +89,13 @@ function RunQuesty(max_time)
     repeat
         local loop_ti = ResetTimeout()
         repeat
-            CheckTimeout(10, loop_ti, CallerName(false), "Starting questy")
+            CheckTimeout(10, loop_ti, "Starting questy")
             running_questy = true
             yield("/qst start")
             wait(2)
         until IPC.Questionable.IsRunning()
         repeat
-            CheckTimeout(max_time, ti, CallerName(false), "Running questy")
+            CheckTimeout(max_time, ti, "Running questy")
             wait(.1)
             close_yes_no(true, "Allagan Tomestones")
         until not IPC.Questionable.IsRunning()
@@ -118,12 +118,12 @@ function AcceptQuest(who, which, qlist)
         entity:SetAsTarget()
         entity:Interact()
         wait(.1)
-        CheckTimeout(2, ti, "AcceptQuest", "Talking to", who, "didnt open", qlist)
+        CheckTimeout(2, ti, "Talking to", who, "didnt open", qlist)
         wait(.1)
     until IsAddonReady(qlist)
     SafeCallback(qlist, true, which)
     repeat
-        CheckTimeout(10, ti, "AcceptQuest", "Waiting for quest accept dialog (Is text advance on?)")
+        CheckTimeout(10, ti, "Waiting for quest accept dialog (Is text advance on?)")
         wait(.1)
     until not Player.IsBusy
     wait(.1)

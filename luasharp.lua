@@ -7,7 +7,7 @@ function await(o, max_wait)
     max_wait = default(max_wait, 30)
     local ti = ResetTimeout()
     while not o.IsCompleted do
-        CheckTimeout(max_wait, ti, CallerName(false), "Waiting for task to complete")
+        CheckTimeout(max_wait, ti, "Waiting for task to complete")
         wait(0.1)
     end
     return o.Result
@@ -52,7 +52,7 @@ function make_instance_args(ctype, args_table)
     if arg_array == instance then
         log_(LEVEL_CRITICAL, _array, args)
         log_(LEVEL_CRITICAL, _array, arg_array)
-        error("Failed to make instance", CallerName(false), "type:", ctype, "args:", args)
+        error("Failed to make instance", "type:", ctype, "args:", args)
     end
     return instance
 end
@@ -63,12 +63,12 @@ function deref_pointer(ptr, ctype)
     end
     local AsRef = get_generic_method(Unsafe, "AsRef", { ctype })
     if AsRef == nil or AsRef.Invoke == nil then
-        error("Failed to get AsRef method", CallerName(false), "ctype:", ctype)
+        error("Failed to get AsRef method", "ctype:", ctype)
     end
     local arg = luanet.make_array(Object, { ptr })
     local ref = AsRef:Invoke(nil, arg)
     if ref == arg then
-        error("Failed to deref pointer", CallerName(false), "pointer:", ptr, "ctype:", ctype)
+        error("Failed to deref pointer", "pointer:", ptr, "ctype:", ctype)
     end
     return ref
 end
@@ -95,12 +95,12 @@ function _field(o, field, ...)
     if f == nil then
         f = get_property(t, field, { private = true, static = true }, false)
         if f == nil then
-            error("field or property not found", CallerName(false), o, field)
+            error("field or property not found", o, field)
         end
     end
     local res = f:GetValue(o)
     if res == o then
-        error("could not get value", CallerName(false), o, field)
+        error("could not get value", o, field)
     end
     return _field(res, ...)
 end
@@ -125,7 +125,7 @@ function get_plugin_raw(plugin_name, required, need_loaded)
         end
     end
     if required then
-        error("Plugin not found", CallerName(false), plugin_name)
+        error("Plugin not found", plugin_name)
     end
 end
 
@@ -156,25 +156,25 @@ function load_type_(type_path, assembly)
     for i in luanet.each(AppDomain.CurrentDomain:GetAssemblies()) do
         if i.FullName:match(assembly .. ",") then
             if assembly_handle ~= nil then
-                StopScript("Multiple assemblies found matching name", CallerName(false), "assembly:", assembly)
+                StopScript("Multiple assemblies found matching name", "assembly:", assembly)
             end
             assembly_handle = i
         end
     end
     if assembly_handle == nil then
-        StopScript("Assembly not found", CallerName(false), "assembly:", assembly)
+        StopScript("Assembly not found", "assembly:", assembly)
     end
     local type_found = nil
     for i in luanet.each(assembly_handle.ExportedTypes) do
         if i.FullName == type_path then
             if type_found ~= nil then
-                StopScript("Multiple types found matching name", CallerName(false), "type_path:", type_path)
+                StopScript("Multiple types found matching name", "type_path:", type_path)
             end
             type_found = i
         end
     end
     if type_found == nil then
-        StopScript("Type not found", CallerName(false), "type_path:", type_path)
+        StopScript("Type not found", "type_path:", type_path)
     end
     return type_found
 end
@@ -183,7 +183,7 @@ end
 function get_method(type, method_name, binding)
     local method = type:GetMethod(method_name, make_binding_flags(binding))
     if method == nil then
-        error("Method not found", CallerName(false), "type:", type, "method_name:", method_name)
+        error("Method not found", "type:", type, "method_name:", method_name)
     end
     return method
 end
@@ -193,7 +193,7 @@ function get_field(type, field_name, binding, required)
     local field = type:GetField(field_name, make_binding_flags(binding))
     if field == nil then
         if required then
-            error("Field not found", CallerName(false), "type:", type, "field_name:", field_name)
+            error("Field not found", "type:", type, "field_name:", field_name)
         end
         return nil
     end
@@ -205,7 +205,7 @@ function get_property(type, property_name, binding, required)
     local property = type:GetProperty(property_name, make_binding_flags(binding))
     if property == nil then
         if required then
-            error("Property not found", CallerName(false), "type:", type, "property_name:", property_name)
+            error("Property not found", "type:", type, "property_name:", property_name)
         end
         return nil
     end
@@ -343,7 +343,7 @@ function get_generic_method(targetType, method_name, genericTypes)
             return m:MakeGenericMethod(genericArgsArr)
         end
     end
-    error("No generic method found", CallerName(false), "No matching generic method found for", method_name, "with",
+    error("No generic method found", "No matching generic method found for", method_name, "with",
         #genericTypes, "generic args")
 end
 
@@ -367,6 +367,6 @@ function get_method_overload(targetType, method_name, paramTypes)
             end
         end
     end
-    error("No method overload found", CallerName(false), "No matching overload found for", method_name, "with",
+    error("No method overload found", "No matching overload found for", method_name, "with",
         #paramTypes, "parameters")
 end

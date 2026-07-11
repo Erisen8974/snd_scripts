@@ -14,10 +14,10 @@ function OpenShop(shopkeep_name, shop_names, callbacks)
     local all_names = list_concat(shop_names, keys)
     local ti = ResetTimeout()
     while true do
-        CheckTimeout(30, ti, CallerName(false), "Waiting for shop addon:", table.unpack(shop_names))
+        CheckTimeout(30, ti, "Waiting for shop addon:", table.unpack(shop_names))
         local addon = nil
         repeat
-            CheckTimeout(5, ti, CallerName(false), "Opening shop with", shopkeep_name)
+            CheckTimeout(5, ti, "Opening shop with", shopkeep_name)
             local npc = get_closest_entity(shopkeep_name, true)
             npc:SetAsTarget()
             npc:Interact()

@@ -4,7 +4,7 @@ require 'utils'
 function party_invite_friend(name)
     local f = Instances.FriendsList:GetFriendByName(name)
     if f == nil then
-        error("NoSuchFriend", CallerName(), "No friend with name", name)
+        error("NoSuchFriend", "No friend with name", name)
     end
 
     local InfoProxyPartyInvite, InfoProxyPartyInvite_ty = load_type(
@@ -41,7 +41,7 @@ function wait_for_member(name, match_name, max_wait)
     local ti = ResetTimeout()
     while not party_has_member(match_name) do
         party_invite_friend(name)
-        CheckTimeout(max_wait, ti, CallerName(), "Waiting for party member", name)
+        CheckTimeout(max_wait, ti, "Waiting for party member", name)
         wait(3)
     end
 end

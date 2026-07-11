@@ -100,7 +100,7 @@ function wait_message(after, timeout, ...)
     timeout = default(timeout, 10)
     wait_any_addons("ChatLogPanel_3")
     repeat
-        CheckTimeout(timeout, ti, CallerName(false), "Waiting for message '" .. after .. "' followed by", ...)
+        CheckTimeout(timeout, ti, "Waiting for message '" .. after .. "' followed by", ...)
         wait(.1)
         for i = 1, #messages do
             if find_after(get_chat_messages(3), messages[i], after) then
@@ -114,7 +114,7 @@ function open_addon(addon, base_addon, ...)
     wait_any_addons(base_addon)
     local ti = ResetTimeout()
     while not IsAddonReady(addon) do
-        CheckTimeout(3, ti, CallerName(false), "Opening addon", addon)
+        CheckTimeout(3, ti, "Opening addon", addon)
         SafeCallback(base_addon, ...)
         wait(0.1)
     end
@@ -123,7 +123,7 @@ end
 function confirm_addon(addon, ...)
     local ti = ResetTimeout()
     while IsAddonReady(addon) do
-        CheckTimeout(3, ti, CallerName(false), "Confirming addon", addon)
+        CheckTimeout(3, ti, "Confirming addon", addon)
         SafeCallback(addon, ...)
         wait(0.1)
     end
@@ -133,7 +133,7 @@ function talk(who, what_addon)
     what_addon = default(what_addon, "SelectString")
     local ti = ResetTimeout()
     repeat
-        CheckTimeout(10, ti, CallerName(false), "Talking to", who, "to open addon", what_addon)
+        CheckTimeout(10, ti, "Talking to", who, "to open addon", what_addon)
         local entity = get_closest_entity(who)
         entity:SetAsTarget()
         entity:Interact()
@@ -153,7 +153,7 @@ function close_yes_no(accept, expected_text, mandatory)
             if node == nil or not node:upper():find(expected_text:upper()) then
                 log_(LEVEL_DEBUG, _text, "Expected yesno text '" .. expected_text .. "' didn't match actual text:", node)
                 if mandatory then
-                    error("Wrong yesno", CallerName(false), "Expected yesno text", expected_text,
+                    error("Wrong yesno", "Expected yesno text", expected_text,
                         "did not match actual text", node)
                 end
                 return
@@ -171,7 +171,7 @@ function close_talk(first, ...)
     local ti = ResetTimeout()
     while (first ~= nil and not any_addons_ready(first, ...)) or (first == nil and GetCharacterCondition(32)) do
         yield("/click Talk Click")
-        CheckTimeout(60, ti, CallerName(false), "Finishing talking")
+        CheckTimeout(60, ti, "Finishing talking")
         wait(.1)
     end
 end
@@ -179,7 +179,7 @@ end
 function close_addon(addon)
     local ti = ResetTimeout()
     while IsAddonReady(addon) do
-        CheckTimeout(1, ti, CallerName(false), "Closing addon", addon)
+        CheckTimeout(1, ti, "Closing addon", addon)
         SafeCallback(addon, true, -1)
         wait(0)
     end
@@ -202,7 +202,7 @@ function wait_any_addons(...)
         if ready ~= nil then
             return ready
         end
-        CheckTimeout(30, ti, CallerName(false), "Waiting for addons", ...)
+        CheckTimeout(30, ti, "Waiting for addons", ...)
         wait(0.1)
     end
 end
@@ -344,7 +344,7 @@ function wait_ready(max_wait, seconds_ready, stationary, interval)
     end
     repeat
         if ti ~= nil then
-            CheckTimeout(max_wait, ti, CallerName(), "wait_ready timed out with ready time", os.clock() - ready_time,
+            CheckTimeout(max_wait, ti, "wait_ready timed out with ready time", os.clock() - ready_time,
                 "and target", seconds_ready)
         end
         wait(interval)
@@ -380,11 +380,11 @@ end
 function luminia_row_checked(table, id)
     local sheet = Excel.GetSheet(table)
     if sheet == nil then
-        error("Unknown sheet", CallerName(false), "sheet not found for", table)
+        error("Unknown sheet", "sheet not found for", table)
     end
     local row = sheet:GetRow(id)
     if row == nil then
-        error("Unknown id", CallerName(false), "Id not found in excel data", table, id)
+        error("Unknown id", "Id not found in excel data", table, id)
     end
     return row
 end
@@ -392,11 +392,11 @@ end
 function atk_data_checked(addon, index)
     local w = Addons.GetAddon(addon)
     if not (w.Exists and w.Ready) then
-        error("No addon", CallerName(false), "addon", addon, "not ready")
+        error("No addon", "addon", addon, "not ready")
     end
     local r = w:GetAtkValue(index)
     if r == nil then
-        error("Bad atk index", CallerName(false), "addon", addon, "does not have index", index)
+        error("Bad atk index", "addon", addon, "does not have index", index)
     end
     return r.ValueString
 end
@@ -419,7 +419,7 @@ end
 function GetListElement(menu, index)
     local a = Addons.GetAddon(menu)
     if not a.Ready then
-        error("Bad addon", CallerName(false), menu)
+        error("Bad addon", menu)
     end
     local n = nil
     if menu == "ContextMenu" then
@@ -429,11 +429,11 @@ function GetListElement(menu, index)
     elseif menu == "SelectString" or menu == "SelectIconString" then
         n = a:GetNode(1, 3, list_index(5, index), 2)
     else
-        error("Unknown addon", CallerName(false), menu)
+        error("Unknown addon", menu)
     end
     if tostring(n.NodeType):find("Text:") == nil then
-        log_(LEVEL_DEBUG, _text, "Not a text node", CallerName(false), "NodeType:", n.NodeType, "NodeId:", n.Id,
-            menu, index)
+        log_(LEVEL_DEBUG, _text, "Not a text node", "NodeType:", n.NodeType, "NodeId:", n.Id, menu, index)
+        log_call_trace(LEVEL_DEBUG)
         return nil
     end
     return n.Text
@@ -592,7 +592,7 @@ function string_to_bool(str, truey_values, falsey_values)
             return false
         end
     end
-    error("InvalidBooleanString", CallerName(false), str)
+    error("InvalidBooleanString", str)
 end
 
 --------------------
@@ -615,13 +615,11 @@ function require_plugins(plugins)
         end
     end
     if #plugins > 0 then
-        error("Missing required plugins", CallerName(false), "Missing plugins:", table.concat(plugins, ", "))
+        error("Missing required plugins", "Missing plugins:", table.concat(plugins, ", "))
     end
 end
 
-function error(message, caller, ...)
-    caller = default(caller, CallerName())
-    log("Fatal error " .. message .. " in " .. caller .. ": ", ...)
+function error(message, ...)
     if default(running_questy, false) then
         yield("/qst stop")
     end
@@ -640,43 +638,40 @@ function error(message, caller, ...)
         end
     end
     release_shared_data()
-    luanet.error(_text(message, ...))
+    log("Fatal error:", message, ...)
+    log_call_trace(LEVEL_INFO, 1)
+    luanet.error(_text(message))
 end
 
 NO_CALL_INFO = false
 
-function CallerName(string)
+function log_call_trace(log_level, skip_count)
     if NO_CALL_INFO then
-        return "(unknown caller)"
+        log_(LEVEL_INFO, _text, "Trace disabled")
+        return
     end
-    string = default(string, true)
-    local info = debug.getinfo(3)
-    if info == nil then
-        return "(unknown caller)"
+    log_level = default(log_level, LEVEL_VERBOSE)
+    skip_count = default(skip_count, 0)
+    local level = 2 + skip_count -- 0 is getinfo, 1 is this function, 2 is the caller
+    while true do
+        local info = debug.getinfo(level)
+        if info == nil then
+            break
+        end
+        log_(log_level, _text, debug_info_tostring(info, true))
+        level = level + 1
     end
-    return debug_info_tostring(info, string)
-end
-
-function FunctionInfo(string)
-    if NO_CALL_INFO then
-        return "(unknown function)"
-    end
-    string = default(string, true)
-    local info = debug.getinfo(2)
-    if info == nil then
-        return "(unknown function)"
-    end
-    return debug_info_tostring(info, string)
 end
 
 function debug_info_tostring(debug_info, always_string)
+    log_(LEVEL_VERBOSE, _table, debug_info, "Raw debug info")
     string = default(string, true)
     local caller = debug_info.name
     if caller == nil and not always_string then
         return nil
     end
     local file = debug_info.short_src:gsub('.*\\', '') .. ":" .. debug_info.currentline
-    return tostring(caller) .. "(" .. file .. ")"
+    return _text(default(caller, "<anonymous>"), "in", file)
 end
 
 function caller_test()
@@ -684,7 +679,7 @@ function caller_test()
 end
 
 function test2()
-    log(CallerName())
+    error("Test error", "This is a test error")
 end
 
 --------------------
@@ -778,31 +773,28 @@ function ResetTimeout()
     return os.clock()
 end
 
-function CheckTimeout(max_duration, wait_info, context, ...)
+function CheckTimeout(max_duration, wait_info, ...)
     if wait_info == nil then
-        error("wait_info is nil", CallerName(false), "Must be initialized with ResetTimeout()", "context:",
-            default(context, CallerName(false)), ...)
+        error("wait_info is nil", "Must be initialized with ResetTimeout()", ...)
     end
     if max_duration == nil then
-        error("max_duration is nil", CallerName(false), "Must be provided", "context:",
-            default(context, CallerName(false)), ...)
+        error("max_duration is nil", "Must be provided", ...)
     end
     if os.clock() > wait_info + max_duration then
-        error("Max duration reached", default(context, CallerName(false)), ...)
+        error("Max duration reached", ...)
     end
 end
 
-function AlertTimeout(max_duration, wait_info, context, ...)
+function AlertTimeout(max_duration, wait_info, ...)
     if wait_info == nil then
-        error("wait_info is nil", CallerName(false), "Must be initialized with ResetTimeout()", "context:",
-            default(context, CallerName(false)), ...)
+        error("wait_info is nil", "Must be initialized with ResetTimeout()", ...)
     end
     if max_duration == nil then
-        error("max_duration is nil", CallerName(false), "Must be provided", "context:",
-            default(context, CallerName(false)), ...)
+        error("max_duration is nil", "Must be provided", ...)
     end
     if os.clock() > wait_info + max_duration then
-        log("Max duration reached", default(context, CallerName(false)), ...)
+        log("Max duration reached", ...)
+        log_call_trace()
         return true
     end
     return false

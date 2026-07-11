@@ -20,12 +20,12 @@ function DoCraft(item_info, amt)
         before = Inventory.GetItemCount(id)
     end
     repeat
-        CheckTimeout(10, ti, "DoCraft", item_info.itemName, amt, "not ready to craft")
+        CheckTimeout(10, ti, item_info.itemName, amt, "not ready to craft")
         wait(1)
     until CouldCraft()
     IPC.Artisan.CraftItem(item_info.recipeId, amt)
     repeat
-        CheckTimeout(60 * amt, ti, "DoCraft", item_info.itemName, amt, "did not finish")
+        CheckTimeout(60 * amt, ti, item_info.itemName, amt, "did not finish")
         wait(1)
     until not IPC.Artisan.GetEnduranceStatus()
     if id ~= 0 then

@@ -57,7 +57,7 @@ function SetPhantomJob(job_name)
     local ti = ResetTimeout()
     local job_data = phantom_jobbies[job_name]
     if job_data == nil then
-        error("bad name", CallerName(false), "Unknown phantom job", job_name)
+        error("bad name", "Unknown phantom job", job_name)
     end
 
     if HasStatusId(job_data.status) then
@@ -73,7 +73,7 @@ function SetPhantomJob(job_name)
 
 
     while not HasStatusId(job_data.status) do
-        CheckTimeout(2, ti, CallerName(false), "Waiting for phantom job to be set", job_name)
+        CheckTimeout(2, ti, "Waiting for phantom job to be set", job_name)
         wait(.1)
     end
     return GetStatusStackCount(job_data.status) & 0xff
@@ -83,7 +83,7 @@ function ApplyPhantomBuffs()
     local base_job, _ = DeterminePhantomJob()
 
     if base_job == nil then
-        error("No phantom job set", CallerName(false), "Probably not in instance")
+        error("No phantom job set", "Probably not in instance")
     end
 
     local global_buffs = {
@@ -111,7 +111,7 @@ function ApplyPhantomBuff(skill_id, buff_id)
     ExecuteAction(skill_id)
     local ti = ResetTimeout()
     while not HasStatusId(buff_id) do
-        CheckTimeout(5, ti, CallerName(false), "Waiting for phantom buff to be applied", skill_id, buff_id)
+        CheckTimeout(5, ti, "Waiting for phantom buff to be applied", skill_id, buff_id)
         wait(.1)
     end
 end

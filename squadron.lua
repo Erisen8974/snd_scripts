@@ -28,7 +28,7 @@ function enter_barracks()
         close_yes_no(true, "Enter the Barracks")
         ZoneTransition()
     else
-        error("Unsupported Grand Company: ", CallerName(false), company, "is not supported")
+        error("Unsupported Grand Company: ", company, "is not supported")
     end
 end
 
@@ -53,7 +53,7 @@ end
 function pick_gc_tab(tab)
     open_mission_list()
     if tab >= 3 then
-        error("BadTabNumber", CallerName(false), "tab", tab)
+        error("BadTabNumber", "tab", tab)
     end
     local ti = ResetTimeout()
     local _click = 0
@@ -62,7 +62,7 @@ function pick_gc_tab(tab)
             _click = os.clock()
             SafeCallback("GcArmyExpedition", true, 11, tab)
         end
-        CheckTimeout(10, ti, CallerName(false), "Picking GC mission tab", tab)
+        CheckTimeout(10, ti, "Picking GC mission tab", tab)
         wait(.1)
     end
 end
@@ -71,7 +71,7 @@ function pick_gc_mission(number)
     open_mission_list()
     local mission_count = tonumber(atk_data_checked("GcArmyExpedition", 6))
     if number >= mission_count then
-        error("BadMission", CallerName(false), "number", number, "available", mission_count)
+        error("BadMission", "number", number, "available", mission_count)
     end
     local ti = ResetTimeout()
     local _click = 0
@@ -81,7 +81,7 @@ function pick_gc_mission(number)
             _click = os.clock()
             SafeCallback("GcArmyExpedition", true, 12, number)
         end
-        CheckTimeout(10, ti, CallerName(false), "Picking GC mission", number)
+        CheckTimeout(10, ti, "Picking GC mission", number)
         wait(.1)
         inst = cs_instance("FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentGcArmyExpedition")
     end
@@ -103,13 +103,13 @@ end
 function is_gc_mission_available(number)
     open_mission_list()
     if not IsAddonReady("GcArmyExpedition") then
-        error("AddonNotReady", CallerName(false), "GcArmyExpedition")
+        error("AddonNotReady", "GcArmyExpedition")
     end
     local mission_base = 8
     local info_count = 4
     local available = tonumber(atk_data_checked("GcArmyExpedition", 6))
     if number >= available then
-        error("BadMission", CallerName(false), "number", number, "available", available)
+        error("BadMission", "number", number, "available", available)
     end
     local status = atk_data_checked("GcArmyExpedition", mission_base + number * info_count)
     return string_to_bool(status)
@@ -151,7 +151,7 @@ function select_team_member(charnum)
     end
     local ti = ResetTimeout()
     while not is_team_member_selected(charnum) do
-        CheckTimeout(10, ti, CallerName(false), "Waiting for team member selection", charnum)
+        CheckTimeout(10, ti, "Waiting for team member selection", charnum)
         wait(.1)
     end
 end
@@ -163,7 +163,7 @@ function set_team(selected_chars)
             toggle_team_member(i)
             local ti = ResetTimeout()
             while is_team_member_selected(i) do
-                CheckTimeout(10, ti, CallerName(false), "Waiting for team member deselection", i)
+                CheckTimeout(10, ti, "Waiting for team member deselection", i)
                 wait(.1)
             end
         end
@@ -258,10 +258,10 @@ function set_retainer_jobs(job, job_full, retainer_num)
         job_full = title_case(Player.Job.Name)
     end
     if job == nil or job_full == nil then
-        error("BadArgument", CallerName(false), "Job and job_full must be specified or job must be 'Current'")
+        error("BadArgument", "Job and job_full must be specified or job must be 'Current'")
     end
     if #job ~= 3 then
-        error("BadArgument", CallerName(false), "Job must be a 3-letter abbreviation")
+        error("BadArgument", "Job must be a 3-letter abbreviation")
     end
 
     local company = Player.GrandCompany
@@ -272,7 +272,7 @@ function set_retainer_jobs(job, job_full, retainer_num)
     elseif company == 3 then
         smart_path("Ul'dah - Steps of Thal", 109, 4.1, -74)
     else
-        error("UnknownGC", CallerName(false), "Edit script to set a city")
+        error("UnknownGC", "Edit script to set a city")
     end
 
     local function __set_retainer_job(retainer)
@@ -322,7 +322,7 @@ function set_retainer_jobs(job, job_full, retainer_num)
     if info ~= nil then
         local retainers = info.Retainers
         if retainers == nil then
-            error("Retainers Error", CallerName(false), "no retainer info defined for", Player.Entity.Name)
+            error("Retainers Error", "no retainer info defined for", Player.Entity.Name)
         end
         for i, r in ipairs(retainers) do
             if i > 0 and (retainer_num == nil or i == retainer_num) then
@@ -331,7 +331,7 @@ function set_retainer_jobs(job, job_full, retainer_num)
         end
         return
     end
-    error("Char Error", CallerName(false), "no char info defined for", Player.Entity.Name)
+    error("Char Error", "no char info defined for", Player.Entity.Name)
 end
 
 function unequip_retainer()
@@ -353,10 +353,10 @@ function equip_retainer_weapon(job, job_full, level)
     until GetNodeText("RetainerCharacter", 1, 108, 149, 152) == job_full
     local p = pred_all(item_in_gearset(false), is_item_job(job), is_item_equip_slot("MainHand"), max_item_level(level))
     while Inventory.GetInventoryContainer(InventoryType.RetainerEquippedItems).Items.Count == 0 do
-        CheckTimeout(10, ti, CallerName(false), "Waiting for weapon to be in inventory for job", job_full)
+        CheckTimeout(10, ti, "Waiting for weapon to be in inventory for job", job_full)
         wait(.2)
         if not move_items({ InventoryType.ArmoryMainHand, table.unpack(ALL_INVENTORY) }, InventoryType.RetainerEquippedItems, p, 1) then
-            error("EquipError", CallerName(false), "Could not find weapon not in gearset for job", job_full)
+            error("EquipError", "Could not find weapon not in gearset for job", job_full)
         end
     end
     wait(.1)
