@@ -310,6 +310,7 @@ function change_character(char, world)
     end
 
     lifestream_command_blocking(target)
+    --    wait_ready(nil, 5, true, .5)
     log_(LEVEL_DEBUG, _text, "Ready!")
 end
 
@@ -339,40 +340,44 @@ function wait_ready(max_wait, seconds_ready, stationary, interval)
     else
         log_(LEVEL_ERROR, _text, "Player.Entity is nil - init")
     end
-    if max_wait ~= nil then
-        ti = ResetTimeout()
-    end
     repeat
         if ti ~= nil then
             CheckTimeout(max_wait, ti, "wait_ready timed out with ready time", os.clock() - ready_time,
                 "and target", seconds_ready)
         end
         wait(interval)
-        local player = Player.Entity
-        if player ~= nil then
-            local position = player.Position
-            if position ~= nil then
-                if p ~= nil then
-                    ---@diagnostic disable-next-line: undefined-field  Vector3.Distance exists....
-                    if is_busy() or (stationary and Vector3.Distance(p, position) > interval) then
-                        log_(LEVEL_DEBUG, _text, "not ready resetting clock")
+        if max_wait ~= nil and (IPC.vnavmesh.BuildProgress() > 0) then
+            -- mesh build time doesnt count
+            log_(LEVEL_DEBUG, _text, "Mesh build in progress, resetting clock and timeout")
+            ti = ResetTimeout()
+            ready_time = os.clock()
+        else
+            local player = Player.Entity
+            if player ~= nil then
+                local position = player.Position
+                if position ~= nil then
+                    if p ~= nil then
+                        ---@diagnostic disable-next-line: undefined-field  Vector3.Distance exists....
+                        if is_busy() or (stationary and Vector3.Distance(p, position) > interval) then
+                            log_(LEVEL_DEBUG, _text, "not ready resetting clock")
+                            p = position
+                            ready_time = os.clock()
+                        else
+                            log_(LEVEL_DEBUG, _text, "ready tick", os.clock() - ready_time, "target", seconds_ready)
+                        end
+                    else
                         p = position
                         ready_time = os.clock()
-                    else
-                        log_(LEVEL_DEBUG, _text, "ready tick", os.clock() - ready_time, "target", seconds_ready)
+                        log_(LEVEL_DEBUG, _text, "Initial position was nil, setting")
                     end
                 else
-                    p = position
                     ready_time = os.clock()
-                    log_(LEVEL_DEBUG, _text, "Initial position was nil, setting")
+                    log_(LEVEL_ERROR, _text, "Player.Entity.Position is nil")
                 end
             else
                 ready_time = os.clock()
-                log_(LEVEL_ERROR, _text, "Player.Entity.Position is nil")
+                log_(LEVEL_ERROR, _text, "Player.Entity is nil")
             end
-        else
-            ready_time = os.clock()
-            log_(LEVEL_ERROR, _text, "Player.Entity is nil")
         end
     until os.clock() - ready_time >= seconds_ready
 end
@@ -598,6 +603,15 @@ end
 --------------------
 -- Error Handling --
 --------------------
+
+function have_plugin(plugin_name)
+    for p in luanet.each(Svc.PluginInterface.InstalledPlugins) do
+        if p.IsLoaded and p.InternalName == plugin_name then
+            return true
+        end
+    end
+    return false
+end
 
 function require_plugins(plugins)
     if #plugins == 0 then

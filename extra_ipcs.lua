@@ -85,6 +85,13 @@ function ar_is_active(buffer_time)
     )
 end
 
+function ar_stop_soon()
+    while ar_is_active() do
+        wait(10)
+    end
+    yield('/ays multi disable')
+end
+
 function ar_add_unconditional_sell(plan_name, itemid)
     local i = get_plugin_instance(AUTORETAINER)
     local im_settings = _field(i, "API", "Config", "AdditionalIMSettings")
