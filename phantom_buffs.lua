@@ -106,9 +106,13 @@ function ApplyPhantomBuffs()
     SetPhantomJob(base_job)
 end
 
+function GetSpellCooldown(spell_id)
+    return Actions.GetActionInfo(spell_id).SpellCooldown
+end
+
 function ApplyPhantomBuff(skill_id, buff_id)
     wait(GetSpellCooldown(skill_id) + .1)
-    ExecuteAction(skill_id)
+    Actions.ExecuteAction(skill_id)
     local ti = ResetTimeout()
     while not HasStatusId(buff_id) do
         CheckTimeout(5, ti, "Waiting for phantom buff to be applied", skill_id, buff_id)
