@@ -1,16 +1,24 @@
 require 'utils'
-require 'legacy_interface'
 
 -------------------------------
 ------- Phantom Jobbies -------
 -------------------------------
 
-MKDInfo = "MKDInfo"
-MKDSupportJob = "MKDSupportJob"
-MKDSupportJobList = "MKDSupportJobList"
+local MKDInfo = "MKDInfo"
+local MKDSupportJob = "MKDSupportJob"
+local MKDSupportJobList = "MKDSupportJobList"
 
+local global_buffs = {
+    RomeosBallad = { id = 41609, job = 4363, min_level = 2, buff_id = 4244 },
+    Fleetfooted = { id = 41597, job = 4360, min_level = 3, buff_id = 4239 },
+    EnduringFortitude = { id = 41589, job = 4358, min_level = 2, buff_id = 4233 },
+    QuickerStep = { id = 46603, job = 4805, min_level = 2, buff_id = 4799 }
+}
 
-job_ranges = {
+local freelancer_id = 4242
+local inquiring_mind = 46606
+
+local job_ranges = {
     { 4242, 4242 },
     { 4358, 4369 },
     { 4803, 4805 },
@@ -61,25 +69,6 @@ function calculate_jobbie()
     }
 end
 
-function och_illegal(state)
-    yield("/ochillegal " .. bool_to_string(state, "on", "off"))
-end
-
-function main_crystal()
-    local x = 837
-    local y = 73
-    local z = -707
-    if GetDistanceToPoint(x, y, z) > 30 then
-        yield("/gaction return")
-        ZoneTransition()
-    end
-    WalkTo(x, y, z)
-    while GetCharacterCondition(4) do
-        yield('/ac dismount')
-        wait(.1)
-    end
-end
-
 function set_phantom_job(job_id)
     local current_job = calculate_jobbie()
     if not current_job then
@@ -116,36 +105,30 @@ function set_phantom_job(job_id)
     return new_job
 end
 
-function apply_phantom_buffs(allow_freelancer)
+function apply_phantom_buffs(allow_freelancer, wait_for_buff, freelancer_check_buff)
     allow_freelancer = default(allow_freelancer, true)
+    wait_for_buff = default(wait_for_buff, true)
+    freelancer_check_buff = default(freelancer_check_buff, "RomeosBallad")
     local original_job = calculate_jobbie()
     if original_job.name == nil then
         error("No phantom job set", "Probably not in instance")
     end
     local skip_individual = false
     if allow_freelancer then
-        local freelancer = set_phantom_job(4242)
+        local freelancer = set_phantom_job(freelancer_id)
         if freelancer.level >= 15 then
-            local inquiring_mind = 46606
-            log_(LEVEL_DEBUG, _text, "Applying all phantom buffs")
-            wait_spell_cd(inquiring_mind)
-            Actions.ExecuteAction(inquiring_mind)
+            log_(LEVEL_DEBUG, _text, "Applying all phantom buffs, watching for", freelancer_check_buff)
+            apply_phantom_buff(inquiring_mind, global_buffs[freelancer_check_buff].buff_id, wait_for_buff)
             skip_individual = true
         end
     end
     if not skip_individual then
-        local global_buffs = {
-            RomeosBallad = { id = 41609, job = 4363, min_level = 2, buff_id = 4244 },
-            Fleetfooted = { id = 41597, job = 4360, min_level = 3, buff_id = 4239 },
-            EnduringFortitude = { id = 41589, job = 4358, min_level = 2, buff_id = 4233 },
-            QuickerStep = { id = 46603, job = 4805, min_level = 2, buff_id = 4799 }
-        }
         for name, data in pairs(global_buffs) do
             local tmp_job = set_phantom_job(data.job)
             if tmp_job.level >= data.min_level then
                 wait_ready(1, .2, true, .1)
                 log_(LEVEL_DEBUG, _text, "Applying phantom buff", name)
-                apply_phantom_buff(data.id, data.buff_id)
+                apply_phantom_buff(data.id, data.buff_id, wait_for_buff)
             else
                 log_(LEVEL_ERROR, _text, "Not high enough level for global buff", name, "min level:", data.min_level,
                     "current level:", tmp_job.level)
@@ -163,12 +146,33 @@ function wait_spell_cd(spell_id)
     until action.SpellCooldown == 0
 end
 
-function apply_phantom_buff(spell_id, buff_id)
+function get_phantom_status(status_id)
+    for s in luanet.each(Player.Status) do
+        if s.StatusId == status_id then
+            return s
+        end
+    end
+    return nil
+end
+
+function wait_phantom_status_duration(status_id, target_duration)
+    local ti = ResetTimeout()
+    repeat
+        CheckTimeout(10, ti, "Waiting for phantom buff", status_id)
+        wait(.1)
+        local buff = get_phantom_status(status_id)
+        if buff ~= nil then
+            log_(LEVEL_DEBUG, _text, "Found target status", status_id, "found", buff.StatusID, "duration needed",
+                target_duration, "has", buff.RemainingTime)
+        end
+    until buff ~= nil and buff.RemainingTime >= target_duration
+end
+
+function apply_phantom_buff(spell_id, buff_id, wait_for_buff)
     wait_spell_cd(spell_id)
     Actions.ExecuteAction(spell_id)
     local ti = ResetTimeout()
-    while not HasStatusId(buff_id) do
-        CheckTimeout(5, ti, "Waiting for phantom buff to be applied", spell_id, buff_id)
-        wait(.1)
+    if wait_for_buff then
+        wait_phantom_status_duration(buff_id, 29 * MINUTES + 55)
     end
 end
