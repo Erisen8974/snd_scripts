@@ -386,11 +386,11 @@ function walk_path(path, fly, range, stop_if_stuck, ref_point, max_stuck_time)
 end
 
 function land_and_dismount()
-    running_vnavmesh = true
     if not GetCharacterCondition(4) then
         return
     end
     if GetCharacterCondition(77) then
+        running_vnavmesh = true
         local floor = IPC.vnavmesh.NearestPoint(Player.Entity.Position, 20, 20)
         IPC.vnavmesh.PathfindAndMoveTo(floor, true)
         local t = os.clock()

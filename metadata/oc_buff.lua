@@ -28,5 +28,7 @@ configs:
 
 
 require 'phantom_buffs'
+require 'path_helpers'
 
+land_and_dismount()
 apply_phantom_buffs(Config.Get("AllowFreelancer"), Config.Get("WaitForBuff"), Config.Get("FreelancerBuff"))
